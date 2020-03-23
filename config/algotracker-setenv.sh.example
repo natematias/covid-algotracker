@@ -1,0 +1,8 @@
+export CS_ENV=""
+export ALGOTRACKER_BASE_DIR=""
+export AIRBRAKE_API_KEY=""
+export AIRBRAKE_PROJECT_ID=""
+
+export ALGOTRACKER_OUTPUT_DIR=""
+
+source venv/bin/activate

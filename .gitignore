@@ -1,5 +1,7 @@
 # Project specific gitignore
 logs/*
+*.swp
+config/algotracker-setenv.sh
 
 
 # Byte-compiled / optimized / DLL files
