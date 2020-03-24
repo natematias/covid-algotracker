@@ -2,6 +2,7 @@
 logs/*
 *.swp
 config/algotracker-setenv.sh
+run-algotracker-collection.sh
 
 
 # Byte-compiled / optimized / DLL files

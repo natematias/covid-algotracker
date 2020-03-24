@@ -333,18 +333,19 @@ for post_id, post in all_posts.items():
     ## update db_posts as well
     ## we are updating each snapshot
     ## to make it easy to output to CSV
-    for key in [PageType.HOT, PageType.TOP]:
-        post_values = extract([
-            'domain', 'is_self',
-            #'url', 'title', 'body', 'permalink',
-            'over_18',
-            'author_flair_text', 'allow_live_comments',
-            'is_video', 'media_only'
-        ], post)
-        db_post = db_posts[post_id]
-        if rank_keys[key] in db_post.keys():
-            for snapshot in db_post[rank_keys[key]]:
-                snapshot.update(post_values)
+    #for key in [PageType.HOT, PageType.TOP]:
+    #    post_values = extract([
+    #        #'is_self',
+    #        #'domain', 'url', 'title', 'body', 'permalink',
+    #        #'over_18',
+    #        #'author_flair_text', 
+    #        #'allow_live_comments',
+    #        #'is_video', 'media_only'
+    #    ], post)
+    #    db_post = db_posts[post_id]
+    #    if rank_keys[key] in db_post.keys():
+    #        for snapshot in db_post[rank_keys[key]]:
+    #            snapshot.update(post_values)
                 
     
     total_reviewed += 1

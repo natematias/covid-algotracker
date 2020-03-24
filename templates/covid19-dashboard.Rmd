@@ -1,0 +1,12 @@
+---
+title: "COVID-19 Content Promoted by reddit"
+output:
+    rmdformats::readthedown:
+    html_document:
+        toc: true
+        theme: readthedown
+date: '`r format(Sys.Date(), "%B %d, %Y")`'
+author: 
+    - J. Nathan Matias, [Cornell University](https://citizensandtech.org)
+    - Eric Pennington, [Citizens and Technology Lab](https://citizensandtech.org)
+---
