@@ -346,7 +346,7 @@ for post_id, post in all_posts.items():
     post['covid_19'] = 0 # using 0 and 1 to save space
     for token in covid_tokens:
         if ltitle.find(token) > -1:
-            post['covid_19'] = 1
+            post['covid_19'] = 1 
         if lselftext.find(token) > -1:
             post['covid_19'] = 1
     if(post['covid_19']):
@@ -360,13 +360,12 @@ for post_id, post in all_posts.items():
         if k in post.keys():
             del post[k]
 
+
+snapshots_updated = 0
     ## set max rank and rank duration
+for post_id, post in all_posts.items():
     post['max_hot'] = post['max_top'] = 0
     post['front_top_seconds'] = post['front_hot_seconds'] = np.nan
-
-    for post in all_posts.values():
-        post['max_hot'] = post['max_top'] = 0
-        post['front_top_seconds'] = post['front_hot_seconds'] = np.nan
         
         ## max rank column
     if post['id'] in fmax_rank_vectors.keys():
@@ -385,37 +384,40 @@ for post_id, post in all_posts.items():
             else:
                 post['front_{0}_seconds'.format(key)] = 0
 
-        ## record whether it was in the latest snapshot
-        for key in rank_keys.values():
-            post["in_latest_snapshot_{0}".format(key)] = 0
-            if post['id'] in [x['id'] for x in last_page[key]['posts']]:
-               post["in_latest_snapshot_{0}".format(key)] = 1
+    ## record whether it was in the latest snapshot
+    for key in rank_keys.values():
+        post["in_latest_snapshot_{0}".format(key)] = 0
+        if post['id'] in [x['id'] for x in last_page[key]['posts']]:
+           post["in_latest_snapshot_{0}".format(key)] = 1
 
 
     ## update db_posts as well
     ## we are updating each snapshot
     ## to make it easy to output to CSV
     for key in [PageType.HOT, PageType.TOP]:
-        post_values = extract([
-          'covid_19'
+#        post_values = extract([
+#          'covid_19'
     #        #'is_self',
     #        #'domain', 'url', 'title', 'body', 'permalink',
     #        #'over_18',
     #        #'author_flair_text', 
     #        #'allow_live_comments',
     #        #'is_video', 'media_only'
-        ], post)
+#        ], post)
 
-        db_post = db_posts[post_id]
-        if rank_keys[key] in db_post.keys():
-            for snapshot in db_post[rank_keys[key]]:
-                snapshot.update(post_values)
-                del snapshot['author']
-                del snapshot['front_page']
+        if rank_keys[key] in db_posts[post_id].keys():
+            for snapshot in db_posts[post_id][rank_keys[key]]:
+                #snapshot.update(post_values)
+                snapshot['covid_19'] = post['covid_19']
+                if 'front_page' in snapshot.keys():
+                    del snapshot['front_page'] 
+                if 'author' in snapshot.keys():
+                    del snapshot['author']
                 
+                snapshots_updated += 1
     
     total_reviewed += 1
-            
+
 print("""
 Out of {} posts appearing on reddit front pages (TOP and HOT) 
 between {} and {}, {} are covid-19 related ({:.02f}%)""".format(

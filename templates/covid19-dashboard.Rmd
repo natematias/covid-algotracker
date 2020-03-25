@@ -5,8 +5,155 @@ output:
     html_document:
         toc: true
         theme: readthedown
+        code_folding: hide
 date: '`r format(Sys.Date(), "%B %d, %Y")`'
 author: 
-    - J. Nathan Matias, [Cornell University](https://citizensandtech.org)
-    - Eric Pennington, [Citizens and Technology Lab](https://citizensandtech.org)
+    - J. Nathan Matias [Cornell University](https://citizensandtech.org)
+    - Eric Pennington [Citizens and Technology Lab](https://citizensandtech.org)
 ---
+
+```{r global_options, include=FALSE}
+knitr::opts_chunk$set(echo=FALSE, warning=FALSE, message=FALSE)
+```
+
+
+````{r results=FALSE, echo=FALSE}
+## load libraries
+library(ggplot2)
+library(DescTools)
+
+## Set visual style
+catpalette   <- c("#333333", "#ea5324", "#005073", "#7D868C", "#BDBBBB", "#F2F2F2","#F6F2EB")
+covidpalette   <- c("#666666", "#ea5324", "#005073", "#7D868C", "#BDBBBB", "#F2F2F2","#F6F2EB")
+
+chartpalette <- c("#ea5324", "#005073", "#7D868C", "#333333", "#F2F2F2","#BDBBBB", "#F6F2EB")
+
+cat.theme <-  theme_bw() +
+              theme(plot.title = element_text(size=13, face="bold", color=catpalette[3]),
+                    axis.title.x =element_text(size=10, hjust = -0.01, color = catpalette[1]),
+                    axis.title.y =element_text(size=10, color = catpalette[1]),
+                    panel.background = element_rect(fill=catpalette[6]))
+options(repr.plot.width=6, repr.plot.height=3)
+
+## set directories
+HOME.DIR = "/home/nathan/covid-algotracker"
+most.recent.folder.name <- as.character(max(as.numeric(SplitPath(Sys.glob(
+        file.path(HOME.DIR, "data-archive", "reddit", "[0-9]*")))$filename)))
+DATA.FOLDER = file.path(HOME.DIR, "data-archive", "reddit", most.recent.folder.name)
+Sys.glob(file.path(DATA.FOLDER, "*"))
+
+######################
+## Utility Methods
+cat.post <- function(post, ranking){
+    cat(paste("<li> (", post['rank_position'], ") (",post['num_comments.x'],"💬) <strong><a href='https://np.reddit.com", 
+              post['permalink'], "'>", post['title'], "</a></strong>",
+              "<ul><li><small><strong>r/",post['subreddit'], 
+              "</strong>. Domain: ",post['domain'],
+              ". Highest Rank: ", 
+              post[paste("max_", ranking, sep="")], ". ",
+              "Time on ", ranking, ": ", 
+              as.integer(as.numeric(post[paste("front_", ranking, "_seconds", sep="")])/60.),
+              " minutes</small></li></ul></small></li>", sep=""))
+}
+
+##############################
+## load posts and rankings
+hot.ranks <- read.csv(file.path(DATA.FOLDER, 
+                               paste("rank_timeseries_hot_",
+                                     most.recent.folder.name,
+                                     ".csv", sep="")))
+hot.ranks$snapshot.num <- sequence(rle(as.character(hot.ranks$id))$lengths)
+
+
+top.ranks <- read.csv(file.path(DATA.FOLDER, 
+                               paste("rank_timeseries_top_",
+                                     most.recent.folder.name,
+                                     ".csv", sep="")))
+top.ranks$snapshot.num <- sequence(rle(as.character(top.ranks$id))$lengths)
+
+
+
+recent.posts  <- read.csv(file.path(DATA.FOLDER, 
+                               paste("promoted_posts_",
+                                     most.recent.folder.name,
+                                     ".csv", sep="")))
+
+#####################################
+## Create ranking and post subsets
+latest.hot.ranking <- max(hot.ranks$rank_id)
+latest.top.ranking <- max(top.ranks$rank_id)
+
+latest.hot.ranks <- subset(hot.ranks, rank_id == latest.hot.ranking & is.na(ups)!=TRUE)
+latest.hot.rank.ids <- unique(latest.hot.ranks$id)
+latest.top.ranks <- subset(top.ranks, rank_id == latest.top.ranking & is.na(ups)!=TRUE)
+latest.top.rank.ids <- unique(latest.top.ranks$id)
+
+latest.hot.posts <- merge(subset(recent.posts, in_latest_snapshot_hot == 1), latest.hot.ranks, by=c("id"))
+latest.top.posts <- merge(subset(recent.posts, in_latest_snapshot_top == 1), latest.top.ranks, by=c("id"))
+
+latest.hot.posts <- latest.hot.posts[order(-latest.hot.posts$rank_position),]
+latest.top.posts <- latest.top.posts[order(-latest.top.posts$rank_position),]
+
+latest.hot.rank.snapshots <- subset(hot.ranks, id %in% latest.hot.rank.ids)
+latest.hot.rank.snapshots$rank.time <- as.POSIXct(latest.hot.rank.snapshots$rank_time, origin="1970-01-01")
+latest.hot.rank.snapshots$age.minutes <- as.integer((latest.hot.rank.snapshots$rank.time - max(latest.hot.rank.snapshots$rank.time))/60)
+
+latest.top.rank.snapshots <- subset(top.ranks, id %in% latest.top.rank.ids)
+latest.top.rank.snapshots$rank.time <- as.POSIXct(latest.top.rank.snapshots$rank_time, origin="1970-01-01")
+latest.top.rank.snapshots$age.minutes <- as.integer((latest.top.rank.snapshots$rank.time - max(latest.top.rank.snapshots$rank.time))/60)
+````
+
+*Latest HOT Snapshot taken: `r as.POSIXct(unique(latest.hot.ranks$rank_time))`. Latest TOP Snapshot taken: `r as.POSIXct(unique(latest.top.ranks$rank_time))`*
+
+TODO: a description of the page goes here.
+
+# Currently-Promoted COVID-19 Posts on Reddit
+
+## Posts Currently Promoted by the HOT Algorithm
+
+<ul>
+````{r echo = FALSE, results='asis'}
+apply(subset(latest.hot.posts, covid_19.x==1), 1, FUN=cat.post, ranking="hot")
+````
+</ul>
+
+## Posts Currently Promoted by the TOP Algorithm
+
+<ul>
+````{r echo = FALSE, results='asis'}
+apply(subset(latest.top.posts, covid_19.x==1), 1, FUN=cat.post, ranking="top")
+````
+</ul>
+
+## Reddit's HOT Ranking
+
+List of posts
+
+````{r echo = FALSE, results=FALSE, fig.width=10, fig.height=3}
+
+ggplot(latest.hot.rank.snapshots, aes(age.minutes, rank_position, group=id, col=factor(covid_19))) +
+    geom_line() + 
+    cat.theme +
+    scale_colour_manual(values = covidpalette, name="COVID-19\nrelated") +
+    xlim(-480, 0) +
+    ylab("Rank position")  +
+    xlab("Minutes prior to the snapshot (up to 8 hours)") +
+    ggtitle("Rank Position of COVID-19 Posts currently the front page of reddit (HOT)")
+````
+
+## Reddit's TOP Ranking
+
+````{r echo=FALSE, results=FALSE, fig.width=10, fig.height=3}
+ggplot(latest.top.rank.snapshots, aes(age.minutes, rank_position, group=id, col=factor(covid_19))) +
+    geom_line() + 
+    cat.theme +
+    scale_colour_manual(values = covidpalette, name="COVID-19\nrelated") +
+    xlim(-900, 0) +
+    ylab("Rank position")  +
+    xlab("Minutes prior to the snapshot (up to 15 hours)") +
+    ggtitle("Rank Position of COVID-19 Posts currently the front page of reddit (TOP)")
+````
+
+# Top Promoted Subreddits
+
+# Top Promoted Sources
