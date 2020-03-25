@@ -45,11 +45,15 @@ Sys.glob(file.path(DATA.FOLDER, "*"))
 ######################
 ## Utility Methods
 cat.post <- function(post, ranking){
-    cat(paste("<li> (", post['rank_position'], ") (",post['num_comments.x'],"💬) <strong><a href='https://np.reddit.com", 
+    cat(paste("<li> <small>(", post['rank_position'], ")",
+              "(🔺",post['ups'], ")",
+              "</small> <strong><a href='https://np.reddit.com", 
               post['permalink'], "'>", post['title'], "</a></strong>",
               "<ul><li><small><strong>r/",post['subreddit'], 
-              "</strong>. Domain: ",post['domain'],
-              ". Highest Rank: ", 
+              "</strong>. ",
+              "(💬",post['num_comments.x'], ") ",
+              "Domain: ",post['domain'], ". ",
+              "Highest Rank: ", 
               post[paste("max_", ranking, sep="")], ". ",
               "Time on ", ranking, ": ", 
               as.integer(as.numeric(post[paste("front_", ranking, "_seconds", sep="")])/60.),
@@ -111,13 +115,33 @@ TODO: a description of the page goes here.
 
 ## Posts Currently Promoted by the HOT Algorithm
 
+In the latest snapshot, `r sprintf("%.01f", (sum(latest.hot.posts$covid_19.x) / nrow(latest.hot.posts))*100)`% of posts appearing in the HOT algorithm on reddit are COVID-19 related.
+
 <ul>
 ````{r echo = FALSE, results='asis'}
 apply(subset(latest.hot.posts, covid_19.x==1), 1, FUN=cat.post, ranking="hot")
 ````
 </ul>
 
+````{r echo = FALSE, results=FALSE, fig.width=10, fig.height=3}
+
+min.hot.xlim = floor(min(subset(latest.hot.rank.snapshots, is.na(rank_position)!=T)$age.minutes)/60)*60
+
+ggplot(latest.hot.rank.snapshots, aes(age.minutes, rank_position, group=id, col=factor(covid_19))) +
+    geom_line() + 
+    cat.theme +
+    scale_colour_manual(values = covidpalette, name="COVID-19\nrelated") +
+    scale_x_continuous(breaks=seq(min.hot.xlim, 0, 60), limits=c(min.hot.xlim, 0)) + 
+    ylab("Rank position")  +
+    ggtitle("Rank Position of COVID-19 Posts currently the front page of reddit (HOT)") +
+    xlab(paste("Minutes prior to the snapshot (up to ",abs(min.hot.xlim/60), " hours)", sep=""))
+
+````
+
 ## Posts Currently Promoted by the TOP Algorithm
+
+
+In the latest snapshot, `r sprintf("%.01f", (sum(latest.top.posts$covid_19.x) / nrow(latest.top.posts))*100)`% of posts appearing in the TOP algorithm on reddit are COVID-19 related.
 
 <ul>
 ````{r echo = FALSE, results='asis'}
@@ -125,33 +149,18 @@ apply(subset(latest.top.posts, covid_19.x==1), 1, FUN=cat.post, ranking="top")
 ````
 </ul>
 
-## Reddit's HOT Ranking
-
-List of posts
-
-````{r echo = FALSE, results=FALSE, fig.width=10, fig.height=3}
-
-ggplot(latest.hot.rank.snapshots, aes(age.minutes, rank_position, group=id, col=factor(covid_19))) +
-    geom_line() + 
-    cat.theme +
-    scale_colour_manual(values = covidpalette, name="COVID-19\nrelated") +
-    xlim(-480, 0) +
-    ylab("Rank position")  +
-    xlab("Minutes prior to the snapshot (up to 8 hours)") +
-    ggtitle("Rank Position of COVID-19 Posts currently the front page of reddit (HOT)")
-````
-
-## Reddit's TOP Ranking
 
 ````{r echo=FALSE, results=FALSE, fig.width=10, fig.height=3}
+min.top.xlim = floor(min(subset(latest.top.rank.snapshots, is.na(rank_position)!=T)$age.minutes)/60)*60
+
 ggplot(latest.top.rank.snapshots, aes(age.minutes, rank_position, group=id, col=factor(covid_19))) +
     geom_line() + 
     cat.theme +
     scale_colour_manual(values = covidpalette, name="COVID-19\nrelated") +
-    xlim(-900, 0) +
+    scale_x_continuous(breaks=seq(min.top.xlim, 0, 60), limits=c(min.top.xlim, 0)) + 
     ylab("Rank position")  +
-    xlab("Minutes prior to the snapshot (up to 15 hours)") +
-    ggtitle("Rank Position of COVID-19 Posts currently the front page of reddit (TOP)")
+    ggtitle("Rank Position of COVID-19 Posts currently the front page of reddit (TOP)") +
+    xlab(paste("Minutes prior to the snapshot (up to ",abs(min.top.xlim/60), " hours)", sep=""))
 ````
 
 # Top Promoted Subreddits
