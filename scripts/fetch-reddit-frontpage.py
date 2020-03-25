@@ -72,6 +72,28 @@ def post_rankings():
 ## extract(keys, dict)
 extract = lambda x, y: dict(zip(x, map(y.get, x)))
 
+##  Parse Pages
+## record the mean and median ups, downs, score
+## knowing that they're obfuscated by reddit            
+
+def parsed_page(page):
+    page_posts = json.loads(page.page_data)
+    
+    downs   = [x['downs'] for x in page_posts]
+    ups     = [x['ups'] for x in page_posts]
+    scores   = [x['score'] for x in page_posts]
+    
+    return {"created_at":page.created_at,
+            "page_type":page.page_type,
+            "id": page.id,
+            "median_ups"    : np.median(ups),
+            "mean_ups"      : np.mean(ups),
+            "median_downs"  : np.median(downs),
+            "mean_downs"    : np.mean(downs),
+            "median_scores" : np.median(scores),
+            "mean_scores"   : np.mean(scores),
+            "posts"         : page_posts}
+
 ## Query and construct rank vectors from CivilServant
 def post_rankings():
     return {rank_keys[PageType.HOT]:[],
@@ -94,7 +116,7 @@ def construct_rank_vectors(is_subpage):
                                                             FrontPage.created_at >= opening_date))
         for page in pages:
             subid = "FRONT PAGE" ## Vestige from a more general library
-            all_pages[rank_keys[pt]].append(page)     
+            all_pages[rank_keys[pt]].append(parsed_page(page))     
             posts = json.loads(page.page_data)
             
             rank_posts[page.id][rank_keys[pt]] = posts
@@ -124,7 +146,6 @@ def construct_rank_vectors(is_subpage):
                                          reverse=False)
                         
     return max_rank_vectors, all_posts, all_pages, rank_posts
-
 
 ## Query PushShift
 def getPSPosts(ids):
@@ -165,6 +186,7 @@ print("Completed rank vector collection from {0} posts in in {1} seconds".format
     (rank_vector_end - rank_vector_start).total_seconds()
 ))
 
+
 # ### For all posts, Produce the Rank Position for the Whole Observed Period Up to the Last Observation or 6 Hours, Whichever is Longer
 
 print("Creating Regular Snapshots for Every Post")
@@ -186,7 +208,7 @@ for post in db_posts.values():
     post_id = prototype_post['id']
     post_created = datetime.datetime.utcfromtimestamp(prototype_post['created_utc'])
 
-    created_plus_six = post_created + datetime.timedelta(hours=6)
+    created_plus = post_created + datetime.timedelta(hours=6)
     final_observed_time = {}
     timeseries_last_time = {}
 
@@ -194,12 +216,12 @@ for post in db_posts.values():
         if key in post.keys() and len(post[key]) > 0:
             final_observed_time[key] = post[key][-1]['rank_time']
         else:
-            final_observed_time[key] = created_plus_six
+            final_observed_time[key] = created_plus
 
-        if(final_observed_time[key]>created_plus_six):
+        if(final_observed_time[key]>created_plus):
             timeseries_last_time[key] = final_observed_time[key]
         else:
-            timeseries_last_time[key] = created_plus_six
+            timeseries_last_time[key] = created_plus
 
     overall_last_time = max([timeseries_last_time[x] for x in rank_keys.values()])
 
@@ -207,9 +229,9 @@ for post in db_posts.values():
 
     for pt in [PageType.HOT, PageType.TOP]:    
         for page in [p for p in all_pages[rank_keys[pt]] 
-                      if p.page_type==pt.value]:
+                      if p['page_type']==pt.value]:
 
-            page_rank_time = page.created_at
+            page_rank_time = page['created_at']
 
             ## if the time is ineligible, skip the iteration
             ## or stop iterating entirely
@@ -218,25 +240,16 @@ for post in db_posts.values():
             if(page_rank_time > overall_last_time):
                 break
 
-            page_ranks = rank_posts[page.id][rank_keys[pt]]
+            page_ranks = rank_posts[page['id']][rank_keys[pt]]
             
             num_snapshots += 1
 
             ## record the mean and median ups, downs, score
-            ## knowing that they're obfuscated by reddit
-            page_posts = json.loads(page.page_data)
-            downs   = [x['downs'] for x in page_posts]
-            ups     = [x['ups'] for x in page_posts]
-            scores   = [x['score'] for x in page_posts]
-
-            snapshot_obs = {
-                "median_ups"    : np.median(ups),
-                "mean_ups"      : np.mean(ups),
-                "median_downs"  : np.median(downs),
-                "mean_downs"    : np.mean(downs),
-                "median_scores" : np.median(scores),
-                "mean_scores"   : np.mean(scores)
-            }
+            ## knowing that they're obfuscated by reddit            
+            snapshot_obs = {}
+            for k in ['median_ups', 'mean_ups','median_downs',
+                      'mean_downs', 'median_scores', 'mean_scores']:
+                snapshot_obs[k] = page[k]
 
             ## if this ranking snapshot is already recorded
             ## in the rank times for this post
@@ -244,7 +257,7 @@ for post in db_posts.values():
             ## and stop iterating
             rank_updated = False
             for page_rank in post[rank_keys[pt]]:
-                if(page_rank['rank_id'] == page.id):
+                if(page_rank['rank_id'] == page['id']):
                     page_rank.update(snapshot_obs)
                     rank_updated = True
                     break
@@ -255,8 +268,8 @@ for post in db_posts.values():
             ## then add it to the list
             snapshot_obs.update(prototype_post)
 
-            snapshot_obs['rank_id']    = page.id
-            snapshot_obs['rank_time']  = page.created_at
+            snapshot_obs['rank_id']    = page['id']
+            snapshot_obs['rank_time']  = page['created_at']
             snapshot_obs['front_page'] = rank_keys[pt]
 
             for key in ['rank_position', 'score', 
@@ -272,6 +285,15 @@ for post_id, post in db_posts.items():
                                      key = lambda x: x['rank_time'],
                                      reverse=False)
 
+#### For every post, assign a column based on whether it was on hot or top at the very end of the observation period
+last_page = {}
+for key in rank_keys.values():
+    last_page[key] = all_pages[key][-1]
+    for post_id, post in db_posts.items():
+        in_last_page = int(post_id in [x['id'] for x in last_page[key]['posts']])
+        for snapshot in post[key]:
+            snapshot["in_latest_snapshot".format(key)] = in_last_page
+
 ####################################
 ## Query Post information from Pushshift
 fp_post_ids = list(db_posts.keys())
@@ -285,26 +307,26 @@ bg_begin = datetime.datetime.utcnow()
 
 ## dict of posts, with a key associated with the post ID
 print("Loading {0} posts from Pushshift with {1} queries. Estimate time: {2} minutes".format(
-		len(fp_post_ids),
-		math.ceil(len(fp_post_ids)/page_size),
-		math.ceil(math.ceil((len(fp_post_ids)/page_size)*courtesy_delay + (len(fp_post_ids)/page_size)*est_query_time)/60)
+    len(fp_post_ids),
+    math.ceil(len(fp_post_ids)/page_size),
+    math.ceil(math.ceil((len(fp_post_ids)/page_size)*courtesy_delay + (len(fp_post_ids)/page_size)*est_query_time)/60)
 
 ))
 
 head = 0
 tail = page_size
 while(head <= len(fp_post_ids)):
-		sys.stdout.write(".")
-		sys.stdout.flush()
-		ids = fp_post_ids[head:tail]
-		if(len(ids)>0):
-				posts = getPSPosts(ids)
-				for post in posts:
+    sys.stdout.write(".")
+    sys.stdout.flush()
+    ids = fp_post_ids[head:tail]
+    if(len(ids)>0):
+        posts = getPSPosts(ids)
+        for post in posts:
 #                post['post_week'] = datetime.datetime.fromtimestamp(post['created_utc']).strftime("%Y%U")
-						all_posts[post['id']] = post
-		time.sleep(courtesy_delay)
-		head += page_size
-		tail += page_size
+            all_posts[post['id']] = post
+    time.sleep(courtesy_delay)
+    head += page_size
+    tail += page_size
 
 bg_end = datetime.datetime.utcnow()
 
@@ -318,34 +340,78 @@ print("Queried Pushshift in {0} seconds".format((bg_end - bg_begin).total_second
 num_matches = 0
 total_reviewed = 0
 
-match_terms = defaultdict(list)
-
 for post_id, post in all_posts.items():
     ltitle = post['title'].lower()
-    post['covid_19'] = False
+    lselftext = post['selftext'].lower()
+    post['covid_19'] = 0 # using 0 and 1 to save space
     for token in covid_tokens:
         if ltitle.find(token) > -1:
-            post['covid_19'] = True
-            match_terms[token].append(ltitle)
+            post['covid_19'] = 1
+        if lselftext.find(token) > -1:
+            post['covid_19'] = 1
     if(post['covid_19']):
         num_matches += 1
+
+    ## add some additional friction to finding authors by
+    ## removing author information from the dataset
+    for k in ['author', 'author_cakeday', 'author_flair_background', 'author_flair_css',
+              'author_flair_template_id', 'author_flair_text', 'author_flair_type', 'author_fullname',
+              'author_patreon_flair', 'author_premium']:
+        if k in post.keys():
+            del post[k]
+
+    ## set max rank and rank duration
+    post['max_hot'] = post['max_top'] = 0
+    post['front_top_seconds'] = post['front_hot_seconds'] = np.nan
+
+    for post in all_posts.values():
+        post['max_hot'] = post['max_top'] = 0
+        post['front_top_seconds'] = post['front_hot_seconds'] = np.nan
+        
+        ## max rank column
+    if post['id'] in fmax_rank_vectors.keys():
+        max_rank = fmax_rank_vectors[post['id']]
+        for key,value in max_rank['FRONT PAGE'].items():
+            post['week'] = datetime.datetime.fromtimestamp(post['created_utc']).strftime("%Y%U")
+            post["max_{0}".format(rank_keys[key])] = value
+        
+        ## time on front page (top and hot)  
+        for key, ranks in db_posts[post['id']].items():
+            observed_ranks = [x for x in ranks if x['rank_position']]
+            if(len(observed_ranks)>0):
+                earliest_rank = observed_ranks[0]['rank_time']
+                last_rank = observed_ranks[-1]['rank_time']
+                post['front_{0}_seconds'.format(key)] = (last_rank - earliest_rank).total_seconds()
+            else:
+                post['front_{0}_seconds'.format(key)] = 0
+
+        ## record whether it was in the latest snapshot
+        for key in rank_keys.values():
+            post["in_latest_snapshot_{0}".format(key)] = 0
+            if post['id'] in [x['id'] for x in last_page[key]['posts']]:
+               post["in_latest_snapshot_{0}".format(key)] = 1
+
 
     ## update db_posts as well
     ## we are updating each snapshot
     ## to make it easy to output to CSV
-    #for key in [PageType.HOT, PageType.TOP]:
-    #    post_values = extract([
+    for key in [PageType.HOT, PageType.TOP]:
+        post_values = extract([
+          'covid_19'
     #        #'is_self',
     #        #'domain', 'url', 'title', 'body', 'permalink',
     #        #'over_18',
     #        #'author_flair_text', 
     #        #'allow_live_comments',
     #        #'is_video', 'media_only'
-    #    ], post)
-    #    db_post = db_posts[post_id]
-    #    if rank_keys[key] in db_post.keys():
-    #        for snapshot in db_post[rank_keys[key]]:
-    #            snapshot.update(post_values)
+        ], post)
+
+        db_post = db_posts[post_id]
+        if rank_keys[key] in db_post.keys():
+            for snapshot in db_post[rank_keys[key]]:
+                snapshot.update(post_values)
+                del snapshot['author']
+                del snapshot['front_page']
                 
     
     total_reviewed += 1
@@ -367,8 +433,8 @@ for post_id, post in db_posts.items():
         output_snapshots[key] += snapshots
 
 last_snapshot = max([
-    max([x.created_at for x in all_pages['hot']]),
-    max([x.created_at for x in all_pages['top']])
+    max([x['created_at'] for x in all_pages['hot']]),
+    max([x['created_at'] for x in all_pages['top']])
 ])
 
 timestamp_string = last_snapshot.strftime("%Y%m%d%H%M%S")
@@ -392,12 +458,12 @@ for key in list(rank_keys.values()):
         timestamp_string
     )
     print("writing {0}".format(outfile_name))
-    pd.DataFrame(output_snapshots[key]).to_csv(os.path.join(output_folder, outfile_name))
+    pd.DataFrame(output_snapshots[key]).to_csv(os.path.join(output_folder, outfile_name), index=False)
 
 ## output dataset of all posts with max rank
 all_posts_filename = "promoted_posts_{0}.csv".format(timestamp_string)
 print("writing {0}".format(all_posts_filename))
-pd.DataFrame(list(all_posts.values())).to_csv(os.path.join(output_folder,all_posts_filename))
+pd.DataFrame(list(all_posts.values())).to_csv(os.path.join(output_folder,all_posts_filename), index=False)
 
 ## copy configuration file
 shutil.copyfile(os.path.join(OUTPUT_BASE_DIR,"../config", "algotracker-config.json"), 
