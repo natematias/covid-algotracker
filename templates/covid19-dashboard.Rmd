@@ -44,12 +44,14 @@ cat.theme <-  theme_bw() +
                     panel.background = element_rect(fill=catpalette[6]))
 options(repr.plot.width=6, repr.plot.height=3)
 
-## set directories
+## set directories and other global settings
 HOME.DIR = "/home/nathan/covid-algotracker"
 most.recent.folder.name <- as.character(max(as.numeric(SplitPath(Sys.glob(
         file.path(HOME.DIR, "data-archive", "reddit", "[0-9]*")))$filename)))
 DATA.FOLDER = file.path(HOME.DIR, "data-archive", "reddit", most.recent.folder.name)
 Sys.glob(file.path(DATA.FOLDER, "*"))
+
+num.top.obs = 20
 
 ######################
 ## Utility Methods
@@ -223,31 +225,29 @@ ggplot(latest.top.rank.snapshots, aes(age.minutes, rank_position, group=id, col=
     xlab(paste("Minutes prior to the snapshot (up to ",abs(min.top.xlim/60), " hours)", sep=""))
 ````
 
-# Communities and Sources
-
-## Communities and Sources Promoted by Reddit's HOT Algorithm
+# Top `r num.top.obs` Communities Promoted by Reddit's Algorithms Over `r observation.period.days` Days
 
 ```{r echo=FALSE, results=TRUE}
-num.top.obs = 15
 
 recent.subs <- as.data.frame(table(as.character(subset(recent.posts, covid_19==1)$subreddit)))
 recommended.subs <- head(recent.subs[order(-recent.subs$Freq),], num.top.obs)
 row.names(recommended.subs) <- recommended.subs$Var1
 names(recommended.subs) <- c("subreddit", "frequency")
 kable(recommended.subs[c("frequency")],
-    caption=paste("Top ", num.top.obs, " subreddits with COVID-19 content promoted by reddit's algorithms in the past ",
+    caption=paste("Top ", num.top.obs, " <strong>subreddit communities</strong> with COVID-19 content promoted by reddit's algorithms in the past ",
                   observation.period.days, " days.",sep=""))
 
 ````
 
 
+# Top `r num.top.obs` domains Promoted by Reddit's Algorithms Over `r observation.period.days` Days
 ```{r echo=FALSE, results=TRUE}
 recent.domains <- as.data.frame(table(as.character(subset(recent.posts, covid_19==1)$domain)))
 recommended.domains <- head(recent.domains[order(-recent.domains$Freq),], num.top.obs)
 row.names(recommended.domains) <- recommended.domains$Var1
 names(recommended.domains) <- c("domain", "frequency")
 kable(recommended.domains[c("frequency")],
-    caption=paste("Top ",num.top.obs," web domains with COVID-19 content promoted by reddit's algorithms in the past ",
+    caption=paste("Top ",num.top.obs," <strong>web domains</strong> with COVID-19 content promoted by reddit's algorithms in the past ",
                   observation.period.days, " days.",sep=""))
 
 ````
