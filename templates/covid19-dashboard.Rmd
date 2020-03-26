@@ -1,5 +1,5 @@
 ---
-title: "COVID-19 Content Promoted by reddit"
+title: "COVID-19 Reddit Algo-Tracker" 
 output:
     rmdformats::readthedown:
     html_document:
@@ -13,6 +13,11 @@ author:
     - name: Eric Pennington 
       affiliation: "<a href='https://citizensandtech.org'>CAT Lab, Cornell University</a>"
 ---
+<style type="text/css">
+/*#sidebar{background-color:#8d452f}
+#sidebar h2{background-color:#ea5324}
+h1,h2,h3,h4,h5,h6{color:#ea5324}*/
+</style>
 
 ```{r global_options, include=FALSE}
 knitr::opts_chunk$set(echo=FALSE, warning=FALSE, message=FALSE)
@@ -24,6 +29,7 @@ knitr::opts_chunk$set(echo=FALSE, warning=FALSE, message=FALSE)
 library(ggplot2)
 library(DescTools)
 library(knitr)
+library(rjson)
 
 ## Set visual style
 catpalette   <- c("#333333", "#ea5324", "#005073", "#7D868C", "#BDBBBB", "#F2F2F2","#F6F2EB")
@@ -85,6 +91,11 @@ recent.posts  <- read.csv(file.path(DATA.FOLDER,
                                      most.recent.folder.name,
                                      ".csv", sep="")))
 
+config.json <- fromJSON(file=file.path(DATA.FOLDER, 
+                               paste("algotracker-config-",
+                                     most.recent.folder.name,
+                                     ".json", sep="")))
+
 observation.period.days <- as.integer(round(max(as.POSIXct(top.ranks$rank_time)) - min(as.POSIXct(top.ranks$rank_time))))
 
 #####################################
@@ -130,14 +141,35 @@ latest.top.rank.snapshots$age.minutes <- as.integer((latest.top.rank.snapshots$r
 </script>
 <!-- End Matomo Code -->
 
+**How do Reddit's popularity algorithms promote information about COVID-19?**
 
-*Latest HOT Snapshot taken: `r as.POSIXct(unique(latest.hot.ranks$rank_time))`. Latest TOP Snapshot taken: `r as.POSIXct(unique(latest.top.ranks$rank_time))`*
+<!-- CAT Lab Logo (float right) -->
+<img src="../assets/CAT-square-logo.png" width="150" align="right" style="margin:10px;"/>
 
-TODO: a description of the page goes here.
+
+Since 2016, the [Citizens and Technology Lab](https://citizensandtech.org/about-cat-lab/) has taken ongoing snapshots of reddit's algorithms every 2-3 minutes. As we develop rapid-response citizen science studies with subreddits to test public health messaging, we have published our real-time data on reddit's algorithms with this dashboard.
+
+During a pandemic, people need evolving information to guide our health decisions and what we share with others. These needs continue across the months-long [pandemic cycle of prevention, resilience, and recovery](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4504362/). 
+
+Reddit is already a major hub of COVID-19 information for hundreds of millions worldwide. News and norms spread rapidly across the site, spread by algorithms that promote content from communities of tens of millions. Reddit memes, jokes, and ideas are also shared more widely online. While Reddit's ecosystem could improve safety, health, and well being, public health experts have also argued that [cascades of human and algorithm sharing are the biggest pandemic risk](https://www.nature.com/articles/d41586-018-07034-4). 
+
+Another reason to monitor algorithms is that fact-checking interventions can have unexpected side-effects on ranking algorithms. In a large-scale experiment with r/worldnews on reddit, I found that [encouraging fact-checking influenced what reddit's popularity algorithms promoted by influencing human behavior](https://osf.io/m98b6/).
 
 ## How We Collect Data
+This dashboard is generated every 30 minutes using the latest data within CAT Lab's research software. The output of this dashbaord is based on the last `r observation.period.days`. This dashboard uses three sources:
+* snapshots every 2 minutes of two key reddit algorithms:
+  * reddit's HOT algorithm, the default popularity ranking on the site
+  * reddit's TOP algorithm
+* data about posts, currently queried from Jason Baumgartner's [PushShift service](https://pushshift.io/)
+
+With every report, we publish research-quality datasets to [covid-algotracker on github](https://github.com/natematias/covid-algotracker/tree/master/data-archive/reddit), along with information about the settings, keywords, and software behind the data.
 
 ## How We Identify COVID-19 Posts
+This report identified a post as related to COVID-19 if the lower-case title or the text of the submission matched any of the following terms ([code here](https://github.com/natematias/covid-algotracker/blob/master/scripts/fetch-reddit-frontpage.py)):
+
+````{r echo = FALSE, results=TRUE}
+config.json$terms
+````
 
 # Currently-Promoted COVID-19 Posts on Reddit
 
@@ -219,3 +251,24 @@ kable(recommended.domains[c("frequency")],
                   observation.period.days, " days.",sep=""))
 
 ````
+
+# How to Help
+We have been working with r/science moderators on public health interventions since COVID-19 reached the US. We have lined up collaborations with communities of tens of millions on reddit and are currently fundraising support for a coordinator to help us organize redditors to expand the quality and timeliness of public health information on reddit. We developed this dashboard to guide our own efforts, and also to showcase the information available to our software for community-led behavioral research on reddit.
+
+If your community is interested to join us, **TODO: TAKE ACTION**
+
+If you can help us find the resources to hire a part-time coordinator, please contact J. Nathan Matias nathan.matias@cornell.edu. CAT Lab is a proudly [industry-independent](https://citizensandtech.org/2020/01/industry-independent-research/) research lab at Cornell University.
+
+# About CAT Lab
+The [Citizens and Technology Lab](https://citizensandtech.org) at Cornell University with communities to study the social impacts of digital technologies and discover effective ideas for change. CAT Lab is led by [Dr. J. Nathan Matias](https://natematias.com), an assistant professor in the department of Communication.
+
+Working with communities and movements, we discover practical knowledge that also contributes to science, holds companies accountable, and is guided by the people most affected. Communities bring their problems, deep knowledge, and desire for change. We offer our expertise in scientific research and a software platform for coordinating citizen behavioral science.
+
+# References and Further Reading
+
+* Larson, H. J. (2018). [The biggest pandemic risk? Viral misinformation](https://www.nature.com/articles/d41586-018-07034-4). Nature, 562(7726), 309-310.
+* Matias, J. N. (2019). [Preventing harassment and increasing group participation through social norms in 2,190 online science discussions](https://www.pnas.org/content/early/2019/04/23/1813486116). Proceedings of the National Academy of Sciences, 116(20), 9785-9789.
+* Matias, J. N. (pre-print, 2018). [Nudging Algorithms by Influencing Human Behavior. Effects of Encouraging Fact-Checking on News Algorithms](https://osf.io/m98b6/). https://osf.io/m98b6/
+* Matias, J. N., & Mou, M. (2018, April). [CivilServant: Community-led experiments in platform governance](https://natematias.com/media/Community_Led_Experiments-CHI_2018.pdf). In Proceedings of the 2018 CHI conference on human factors in computing systems (pp. 1-13).
+* Vaughan, E., & Tinker, T. (2009). [Effective health risk communication about pandemic influenza for vulnerable populations](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4504362/). American Journal of Public Health, 99(S2), S324-S332.
+
