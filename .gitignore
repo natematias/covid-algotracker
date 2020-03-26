@@ -1,6 +1,7 @@
 # Project specific gitignore
 logs/*
 *.swp
+.gitconfig
 config/algotracker-setenv.sh
 run-algotracker-collection.sh
 
