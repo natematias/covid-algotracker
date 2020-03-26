@@ -8,8 +8,10 @@ output:
         code_folding: hide
 date: '`r format(Sys.Date(), "%B %d, %Y")`'
 author: 
-    - J. Nathan Matias [Cornell University](https://citizensandtech.org)
-    - Eric Pennington [Citizens and Technology Lab](https://citizensandtech.org)
+    - name: J. Nathan Matias
+      affiliation: "<a href='https://citizensandtech.org'>CAT Lab, Cornell University</a>"
+    - name: Eric Pennington 
+      affiliation: "<a href='https://citizensandtech.org'>CAT Lab, Cornell University</a>"
 ---
 
 ```{r global_options, include=FALSE}
@@ -21,6 +23,7 @@ knitr::opts_chunk$set(echo=FALSE, warning=FALSE, message=FALSE)
 ## load libraries
 library(ggplot2)
 library(DescTools)
+library(knitr)
 
 ## Set visual style
 catpalette   <- c("#333333", "#ea5324", "#005073", "#7D868C", "#BDBBBB", "#F2F2F2","#F6F2EB")
@@ -82,6 +85,8 @@ recent.posts  <- read.csv(file.path(DATA.FOLDER,
                                      most.recent.folder.name,
                                      ".csv", sep="")))
 
+observation.period.days <- as.integer(round(max(as.POSIXct(top.ranks$rank_time)) - min(as.POSIXct(top.ranks$rank_time))))
+
 #####################################
 ## Create ranking and post subsets
 latest.hot.ranking <- max(hot.ranks$rank_id)
@@ -129,6 +134,10 @@ latest.top.rank.snapshots$age.minutes <- as.integer((latest.top.rank.snapshots$r
 *Latest HOT Snapshot taken: `r as.POSIXct(unique(latest.hot.ranks$rank_time))`. Latest TOP Snapshot taken: `r as.POSIXct(unique(latest.top.ranks$rank_time))`*
 
 TODO: a description of the page goes here.
+
+## How We Collect Data
+
+## How We Identify COVID-19 Posts
 
 # Currently-Promoted COVID-19 Posts on Reddit
 
@@ -182,6 +191,31 @@ ggplot(latest.top.rank.snapshots, aes(age.minutes, rank_position, group=id, col=
     xlab(paste("Minutes prior to the snapshot (up to ",abs(min.top.xlim/60), " hours)", sep=""))
 ````
 
-# Top Promoted Subreddits
+# Communities and Sources
 
-# Top Promoted Sources
+## Communities and Sources Promoted by Reddit's HOT Algorithm
+
+```{r echo=FALSE, results=TRUE}
+num.top.obs = 15
+
+recent.subs <- as.data.frame(table(as.character(subset(recent.posts, covid_19==1)$subreddit)))
+recommended.subs <- head(recent.subs[order(-recent.subs$Freq),], num.top.obs)
+row.names(recommended.subs) <- recommended.subs$Var1
+names(recommended.subs) <- c("subreddit", "frequency")
+kable(recommended.subs[c("frequency")],
+    caption=paste("Top ", num.top.obs, " subreddits with COVID-19 content promoted by reddit's algorithms in the past ",
+                  observation.period.days, " days.",sep=""))
+
+````
+
+
+```{r echo=FALSE, results=TRUE}
+recent.domains <- as.data.frame(table(as.character(subset(recent.posts, covid_19==1)$domain)))
+recommended.domains <- head(recent.domains[order(-recent.domains$Freq),], num.top.obs)
+row.names(recommended.domains) <- recommended.domains$Var1
+names(recommended.domains) <- c("domain", "frequency")
+kable(recommended.domains[c("frequency")],
+    caption=paste("Top ",num.top.obs," web domains with COVID-19 content promoted by reddit's algorithms in the past ",
+                  observation.period.days, " days.",sep=""))
+
+````
