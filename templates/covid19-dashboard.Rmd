@@ -7,9 +7,7 @@ output:
         theme: readthedown
         code_folding: hide
         includes:
-            in_header:
-                - meta-tags.html
-                - favicon.html
+            in_header: meta-tags.html
 date: '`r format(Sys.Date(), "%B %d, %Y")`'
 author: 
     - name: Citizens and Technology Lab
