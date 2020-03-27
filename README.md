@@ -6,4 +6,4 @@ Since 2016, the [Citizens and Technology Lab](https://citizensandtech) (CAT Lab)
 
 This repository stores software and archived data from the [COVID-19 Reddit Algo-Tracker](https://covid-algotracker.citizensandtech.org/).
 
-For now, the software and data in this repository is licensed under a [Creative Commons Attribution NoDerivatives 4.0 license](https://creativecommons.org/licenses/by-nd/4.0/). 
+For now, the software and data in this repository are licensed under a [Creative Commons Attribution NoDerivatives 4.0 license](https://creativecommons.org/licenses/by-nd/4.0/). 
