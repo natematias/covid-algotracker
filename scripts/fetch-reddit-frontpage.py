@@ -1,25 +1,53 @@
 import inspect, os, sys, copy, pytz, re, glob, csv, uuid, time, requests, math, jsonlines, datetime, shutil
 
+import airbrake
+import logging
 import simplejson as json
 import pandas as pd
 from dateutil import parser
 import datetime
 import numpy as np
 from collections import Counter, defaultdict
+from logging.handlers import RotatingFileHandler
+from pathlib import Path
 utc=pytz.UTC
 
 ## LOAD ALGOTRACKER CONFIG
 with open("config/algotracker-config.json") as f:
     algotracker_config = json.loads(f.read())
 
+def get_logger(env, airbrake_enabled, log_level):
+    log = airbrake.getLogger() if airbrake_enabled else logging.getLogger()
+    log.setLevel(log_level)
+    
+    fmt = '%(asctime)s - %(name)s({env}) - %(levelname)s - %(message)s'.format(
+        env=env)
+    formatter = logging.Formatter(fmt)
+
+    path = str(Path(__file__, "..", "..", "logs", "covid_algotracker_%s.log" % env))
+    file_handler = RotatingFileHandler(path, 'a', 32 * 1000 * 1024, 1000)
+    file_handler.setLevel(log_level)
+    file_handler.setFormatter(formatter)
+    log.addHandler(file_handler)
+    print("Logging to %s" % path)
+
+    stdout_handler = logging.StreamHandler(sys.stdout)
+    stdout_handler.setLevel(log_level)
+    stdout_handler.setFormatter(formatter)
+    log.addHandler(stdout_handler)
+
+    return log
 
 ## LOAD CIVILSERVANT CONFIG AND LIBRARIES
 
-ENV = "production"
-os.environ['CS_ENV'] = 'production'
+ENV = os.environ['CS_ENV']
 BASE_DIR = os.environ['ALGOTRACKER_BASE_DIR']
 OUTPUT_BASE_DIR = os.environ['ALGOTRACKER_OUTPUT_DIR']
 sys.path.append(BASE_DIR)
+
+AIRBRAKE_ENABLED = bool(os.environ["ALGOTRACKER_AIRBRAKE_ENABLED"])
+LOG_LEVEL = int(os.environ["ALGOTRACKER_LOG_LEVEL"])
+log = get_logger(ENV, AIRBRAKE_ENABLED, LOG_LEVEL)
 
 with open(os.path.join(BASE_DIR, "config") + "/{env}.json".format(env=ENV), "r") as config:
     DBCONFIG = json.loads(config.read())
