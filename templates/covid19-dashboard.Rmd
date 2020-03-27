@@ -6,17 +6,27 @@ output:
         toc: true
         theme: readthedown
         code_folding: hide
+        includes:
+            in_header: meta-tags.html
 date: '`r format(Sys.Date(), "%B %d, %Y")`'
 author: 
-    - name: J. Nathan Matias
-      affiliation: "<a href='https://citizensandtech.org'>CAT Lab, Cornell University</a>"
-    - name: Eric Pennington 
-      affiliation: "<a href='https://citizensandtech.org'>CAT Lab, Cornell University</a>"
+    - name: Citizens and Technology Lab
+      affiliation: Cornell University
 ---
 <style type="text/css">
 /*#sidebar{background-color:#8d452f}
-#sidebar h2{background-color:#ea5324}
-h1,h2,h3,h4,h5,h6{color:#ea5324}*/
+#sidebar h2{background-color:#ea5324}*/
+h1,h2,h3,h4,h5,h6{color:#005073}
+strong.headline{background:#ea532444}
+
+#main a{color:#ea5324;
+        background-image: linear-gradient(180deg,#ea5324,#ea5324);}
+
+#sidebar h2{background-color:#005073}
+#sidebar{background-color:#121d21}
+#postamble{border-top: solid 10px #005073;}
+.author .glyphicon-user{display: none !important}
+
 </style>
 
 ```{r global_options, include=FALSE}
@@ -30,6 +40,13 @@ library(ggplot2)
 library(DescTools)
 library(knitr)
 library(rjson)
+library(lubridate)
+#library(magick)
+
+## use optipng and pngquant to optimize pngs
+## http://zevross.com/blog/2017/06/19/tips-and-tricks-for-working-with-images-and-figures-in-r-markdown-documents/#use-dpi-to-change-the-resolution-of-images-and-figures
+knit_hooks$set(optipng = hook_optipng)
+knit_hooks$set(pngquant = hook_pngquant)
 
 ## Set visual style
 catpalette   <- c("#333333", "#ea5324", "#005073", "#7D868C", "#BDBBBB", "#F2F2F2","#F6F2EB")
@@ -51,15 +68,23 @@ most.recent.folder.name <- as.character(max(as.numeric(SplitPath(Sys.glob(
 DATA.FOLDER = file.path(HOME.DIR, "data-archive", "reddit", most.recent.folder.name)
 Sys.glob(file.path(DATA.FOLDER, "*"))
 
-num.top.obs = 20
+## Load CAT Lab logo
+#cat.logo.png <- image_read(file.path(HOME.DIR, "assets", "CAT-square-logo.png"))
+
+## Basic Configurations
+snapshot.datetime <- parse_date_time(most.recent.folder.name, orders="ymdHMS")
+min.recommended.freq = 3
 
 ######################
 ## Utility Methods
 cat.post <- function(post, ranking){
     cat(paste("<li> <small>(", post['rank_position'], ")",
               "(🔺",post['ups'], ")",
-              "</small> <strong><a href='https://np.reddit.com", 
-              post['permalink'], "'>", post['title'], "</a></strong>",
+              "</small> <strong class='headline'>", 
+              #<a href='https://np.reddit.com", 
+              #post['permalink'], "'>", 
+              post['title'], 
+              "</strong>",#"</a></strong>",
               "<ul><li><small><strong>r/",post['subreddit'], 
               "</strong>. ",
               "(💬",post['num_comments.x'], ") ",
@@ -93,6 +118,14 @@ recent.posts  <- read.csv(file.path(DATA.FOLDER,
                                      most.recent.folder.name,
                                      ".csv", sep="")))
 
+## Record rank time and age in minutes
+top.ranks$rank.time <- as.POSIXct(top.ranks$rank_time, origin="1970-01-01")
+top.ranks$age.minutes <- as.integer((top.ranks$rank.time - max(top.ranks$rank.time))/60)
+
+hot.ranks$rank.time <- as.POSIXct(hot.ranks$rank_time, origin="1970-01-01")
+hot.ranks$age.minutes <- as.integer((hot.ranks$rank.time - max(hot.ranks$rank.time))/60)
+
+
 config.json <- fromJSON(file=file.path(DATA.FOLDER, 
                                paste("algotracker-config-",
                                      most.recent.folder.name,
@@ -117,12 +150,7 @@ latest.hot.posts <- latest.hot.posts[order(-latest.hot.posts$rank_position),]
 latest.top.posts <- latest.top.posts[order(-latest.top.posts$rank_position),]
 
 latest.hot.rank.snapshots <- subset(hot.ranks, id %in% latest.hot.rank.ids)
-latest.hot.rank.snapshots$rank.time <- as.POSIXct(latest.hot.rank.snapshots$rank_time, origin="1970-01-01")
-latest.hot.rank.snapshots$age.minutes <- as.integer((latest.hot.rank.snapshots$rank.time - max(latest.hot.rank.snapshots$rank.time))/60)
-
 latest.top.rank.snapshots <- subset(top.ranks, id %in% latest.top.rank.ids)
-latest.top.rank.snapshots$rank.time <- as.POSIXct(latest.top.rank.snapshots$rank_time, origin="1970-01-01")
-latest.top.rank.snapshots$age.minutes <- as.integer((latest.top.rank.snapshots$rank.time - max(latest.top.rank.snapshots$rank.time))/60)
 ````
 
 <!-- Matomo -->
@@ -146,25 +174,26 @@ latest.top.rank.snapshots$age.minutes <- as.integer((latest.top.rank.snapshots$r
 **How do Reddit's popularity algorithms promote information about COVID-19?**
 
 <!-- CAT Lab Logo (float right) -->
-<img src="../assets/CAT-square-logo.png" width="150" align="right" style="margin:10px;"/>
+<!--<img src="../assets/CAT-square-logo.png" width="150" align="right" style="margin:10px;"/>-->
 
 
-Since 2016, the [Citizens and Technology Lab](https://citizensandtech.org/about-cat-lab/) has taken ongoing snapshots of reddit's algorithms every 2-3 minutes. As we develop rapid-response citizen science studies with subreddits to test public health messaging, we have published our real-time data on reddit's algorithms with this dashboard.
+Since 2016, the [Citizens and Technology Lab](https://citizensandtech.org/about-cat-lab/) (CAT Lab) has taken ongoing snapshots of reddit's algorithms every 2-3 minutes. We created this dashboard to inform the design of our collaborations with reddit communities on COVID-19 public health research.
 
 During a pandemic, people need evolving information to guide our health decisions and what we share with others. These needs continue across the months-long [pandemic cycle of prevention, resilience, and recovery](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4504362/). 
 
-Reddit is already a major hub of COVID-19 information for hundreds of millions worldwide. News and norms spread rapidly across the site, spread by algorithms that promote content from communities of tens of millions. Reddit memes, jokes, and ideas are also shared more widely online. While Reddit's ecosystem could improve safety, health, and well being, public health experts have also argued that [cascades of human and algorithm sharing are the biggest pandemic risk](https://www.nature.com/articles/d41586-018-07034-4). 
+Reddit is already a major hub of COVID-19 information for hundreds of millions worldwide. News and norms spread rapidly across the site, promoted by people and algorithms. Reddit memes, jokes, and ideas are also shared widely on other platforms. While the reddit ecosystem could be a powerful force for good, public health experts have also argued that [cascades of human and algorithm sharing are the biggest pandemic risk](https://www.nature.com/articles/d41586-018-07034-4). 
 
-Another reason to monitor algorithms is that fact-checking interventions can have unexpected side-effects on ranking algorithms. In a large-scale experiment with r/worldnews on reddit, I found that [encouraging fact-checking influenced what reddit's popularity algorithms promoted by influencing human behavior](https://osf.io/m98b6/).
+One reason to monitor algorithms is that information interventions can have unexpected side-effects on ranking algorithms. In a large-scale experiment with r/worldnews on reddit, I found that [encouraging fact-checking influenced what reddit's popularity algorithms promoted by influencing human behavior](https://osf.io/m98b6/).
 
 ## How We Collect Data
-This dashboard is generated every 30 minutes using the latest data within CAT Lab's research software. The output of this dashbaord is based on the last `r observation.period.days`. This dashboard uses three sources:
+This dashboard is generated every 30 minutes using the latest data within CAT Lab's research software. The output of this dashboard is based on the last `r observation.period.days`. It users these sources:
+
 * snapshots every 2 minutes of two key reddit algorithms:
-  * reddit's HOT algorithm, the default popularity ranking on the site
-  * reddit's TOP algorithm
+    * reddit's HOT algorithm, the default popularity ranking on the site
+    * reddit's TOP algorithm
 * data about posts, currently queried from Jason Baumgartner's [PushShift service](https://pushshift.io/)
 
-With every report, we publish research-quality datasets to [covid-algotracker on github](https://github.com/natematias/covid-algotracker/tree/master/data-archive/reddit), along with information about the settings, keywords, and software behind the data.
+With every report, we also publish research-quality datasets to [covid-algotracker on github](https://github.com/natematias/covid-algotracker/tree/master/data-archive/reddit), along with information about the settings, keywords, and software behind the data.
 
 ## How We Identify COVID-19 Posts
 This report identified a post as related to COVID-19 if the lower-case title or the text of the submission matched any of the following terms ([code here](https://github.com/natematias/covid-algotracker/blob/master/scripts/fetch-reddit-frontpage.py)):
@@ -173,19 +202,96 @@ This report identified a post as related to COVID-19 if the lower-case title or 
 config.json$terms
 ````
 
+# How Algorithms Promote Reddit Posts Over Time
+Reddit's public rankings are a classic recommender system. Using information from upvotes, downvotes, post age, and maybe other data, reddit's algorithms create a ranked list suggestions to readers. According to Christian Sandvig, feeds like this [outsource human knowledge and attention to machines](https://citizensandtech.org/2020/03/the-feed-sandvig-2020/). Hybrid human-machine curation can be [valuable and difficult during crises](https://dl.acm.org/doi/pdf/10.1145/2998181.2998299), as Alex Leavitt has described in extensive research on reddit.
+
+This dashboard reviews posts that appeared anywhere in the top 100 recommendations for TOP and HOT.
+
+When articles are promoted by reddit's algorithms, they receive a massive influx of readers, comments, upvotes and downvotes, often causing them to be promoted further. On average over the last `r observation.period.days` days, COVID-19 articles that appeared anywhere in the rankings stayed on HOT for `r sprintf("%.01f", mean(subset(recent.posts, (id %in% latest.hot.rank.ids)!=TRUE & covid_19==1)$front_hot_seconds)/60./60.)
+` hours and on TOP for `r sprintf("%.01f", mean(subset(recent.posts, (id %in% latest.top.rank.ids)!=TRUE & covid_19==1)$front_top_seconds )/60./60.)` hours.
+
+HOT and TOP aren't the only algorithms that influence what people see. For several years now, Reddit has provided a personalized newsfeed algorithm to logged in users, based on the communities that people subscribe to. But since HOT is the default algorithm and many people browse reddit without logging in, these algorithms remain powerful influencers.
+
+Here's what that trajectory looks like for one randomly-sampled post that rose and fell from prominence. In the chart, a rank position of 0 means that the article is at the very top. People typically have to scroll down to see more than 3-4 posts. A rank position of -99 means that you would have to scroll past 99 other posts to see that one. Notice that the HOT rankings are more volatile than TOP:
+
+````{r echo=FALSE, results=FALSE, fig.width=8, fig.height=3, dpi=96, pngquant = '--quality 80-90'}
+
+illustration.post.id <- as.character(sample(
+    subset(recent.posts, (id %in% latest.hot.rank.ids)!=TRUE & 
+                         (id %in% latest.top.rank.ids)!=TRUE & 
+                         front_hot_seconds > 0 &
+                         front_top_seconds > 0 & 
+                         max_top > -50 & 
+                         covid_19==1)$id, 1))
+illustration.post.title <- paste(substr(as.character(recent.posts[recent.posts$id==illustration.post.id,][['title']]), 0,100), "...", sep="")
+illustration.post.title
+
+
+min.hot.xlim = floor(min(subset(hot.ranks, id==illustration.post.id & is.na(rank_position)!=T)$age.minutes)/60)*60
+max.hot.xlim = floor(max(subset(hot.ranks, id==illustration.post.id & is.na(rank_position)!=T)$age.minutes)/60)*60
+min.top.xlim = floor(min(subset(top.ranks, id==illustration.post.id & is.na(rank_position)!=T)$age.minutes)/60)*60
+max.top.xlim = floor(max(subset(top.ranks, id==illustration.post.id & is.na(rank_position)!=T)$age.minutes)/60)*60
+
+max.both.xlim = max(c(max.hot.xlim, max.top.xlim))
+min.both.xlim = min(c(min.hot.xlim, min.top.xlim))
+
+## Illustrate the trajectory for HOT
+
+ggplot(subset(hot.ranks, id==illustration.post.id), aes(age.minutes, rank_position)) +
+    geom_line(color=covidpalette[2]) +
+    cat.theme +
+    scale_colour_manual(values = covidpalette, name="COVID-19\nrelated") +
+    ylab("Rank position")  +
+    scale_x_continuous(breaks=seq(min.both.xlim, max.both.xlim, 60), limits=c(min.both.xlim, max.both.xlim)) + 
+    ylim(-100,0) +
+    ggtitle(paste("Example Trajectory of COVID-19 Post across Reddit's HOT rankings:\n",
+                  '"', illustration.post.title, '"', sep="")) +
+    xlab(paste("Algorithm rank position over time for a reddit post (covering ",
+               abs((max.both.xlim - min.both.xlim)/60), 
+               " hours). Top: 0.  Bottom: -99. \n",
+               "Interruptions can be caused by community removal. ",
+               "Last snapshot: ", snapshot.datetime, ".\n",
+               "Citizens & Technology Lab, Cornell University. CC BY-ND 4.0.\n",
+               "Report and data: covid-algotracker.citizensandtech.org", sep=""))
+
+### Illustrate the trajectory for TOP
+ggplot(subset(top.ranks, id==illustration.post.id), aes(age.minutes, rank_position)) +
+    geom_line(color=covidpalette[2]) +
+    cat.theme +
+    scale_colour_manual(values = covidpalette, name="COVID-19\nrelated") +
+    scale_x_continuous(breaks=seq(min.both.xlim, max.both.xlim, 60), limits=c(min.both.xlim, max.both.xlim)) + 
+    ylim(-100,0) +
+    ylab("Rank position")  +
+    ggtitle(paste("Example Trajectory of COVID-19 Post across Reddit's TOP rankings:\n",
+                  '"', illustration.post.title, '"', sep="")) +
+    xlab(paste("Algorithm rank position over time for a reddit post (covering ",
+               abs((max.both.xlim - min.both.xlim)/60), 
+               " hours). Top: 0.  Bottom: -99. \n",
+               "Interruptions can be caused by community removal. ",
+               "Last snapshot: ", snapshot.datetime, ".\n",
+               "Citizens & Technology Lab, Cornell University. CC BY-ND 4.0.\n",
+               "Report and data: covid-algotracker.citizensandtech.org", sep=""))
+
+
+
+````
+
 # Currently-Promoted COVID-19 Posts on Reddit
 
 ## Posts Currently Promoted by the HOT Algorithm
 
 In the latest snapshot, `r sprintf("%.01f", (sum(latest.hot.posts$covid_19.x) / nrow(latest.hot.posts))*100)`% of posts appearing in the HOT algorithm on reddit are COVID-19 related.
 
+
+
 <ul>
+<li><strong>(rank 0 to -99) (upvotes) (title)</strong></li>
 ````{r echo = FALSE, results='asis'}
-apply(subset(latest.hot.posts, covid_19.x==1), 1, FUN=cat.post, ranking="hot")
+x <- apply(subset(latest.hot.posts, covid_19.x==1), 1, FUN=cat.post, ranking="hot")
 ````
 </ul>
 
-````{r echo = FALSE, results=FALSE, fig.width=10, fig.height=3}
+````{r echo = FALSE, results=FALSE, fig.width=8, fig.height=3, dpi=96, pngquant = '--quality 80-90'}
 
 min.hot.xlim = floor(min(subset(latest.hot.rank.snapshots, is.na(rank_position)!=T)$age.minutes)/60)*60
 
@@ -195,8 +301,11 @@ ggplot(latest.hot.rank.snapshots, aes(age.minutes, rank_position, group=id, col=
     scale_colour_manual(values = covidpalette, name="COVID-19\nrelated") +
     scale_x_continuous(breaks=seq(min.hot.xlim, 0, 60), limits=c(min.hot.xlim, 0)) + 
     ylab("Rank position")  +
-    ggtitle("Rank Position of COVID-19 Posts currently the front page of reddit (HOT)") +
-    xlab(paste("Minutes prior to the snapshot (up to ",abs(min.hot.xlim/60), " hours)", sep=""))
+    ggtitle(paste("COVID-19 Posts Promoted by Reddit's HOT Algorithm, ", snapshot.datetime, sep="")) +
+    xlab(paste("Minutes before the most recent snapshot, at ", snapshot.datetime, ".\n\n",
+               "Rank position over time of ",length(latest.hot.rank.ids)," posts currently appearing on reddit's HOT algorithm.  Top: 0.  Bottom: -99. \n",
+               "Citizens & Technology Lab, Cornell University. CC BY-ND 4.0.\n",
+               "Report and data: covid-algotracker.citizensandtech.org", sep=""))
 
 ````
 
@@ -206,13 +315,14 @@ ggplot(latest.hot.rank.snapshots, aes(age.minutes, rank_position, group=id, col=
 In the latest snapshot, `r sprintf("%.01f", (sum(latest.top.posts$covid_19.x) / nrow(latest.top.posts))*100)`% of posts appearing in the TOP algorithm on reddit are COVID-19 related.
 
 <ul>
+<li><strong>(rank 0 to -99) (upvotes) (title)</strong></li>
 ````{r echo = FALSE, results='asis'}
-apply(subset(latest.top.posts, covid_19.x==1), 1, FUN=cat.post, ranking="top")
+x <- apply(subset(latest.top.posts, covid_19.x==1), 1, FUN=cat.post, ranking="top")
 ````
 </ul>
 
 
-````{r echo=FALSE, results=FALSE, fig.width=10, fig.height=3}
+````{r echo=FALSE, results=FALSE, fig.width=8, fig.height=3, dpi=96, pngquant = '--quality 80-90'} 
 min.top.xlim = floor(min(subset(latest.top.rank.snapshots, is.na(rank_position)!=T)$age.minutes)/60)*60
 
 ggplot(latest.top.rank.snapshots, aes(age.minutes, rank_position, group=id, col=factor(covid_19))) +
@@ -221,37 +331,50 @@ ggplot(latest.top.rank.snapshots, aes(age.minutes, rank_position, group=id, col=
     scale_colour_manual(values = covidpalette, name="COVID-19\nrelated") +
     scale_x_continuous(breaks=seq(min.top.xlim, 0, 60), limits=c(min.top.xlim, 0)) + 
     ylab("Rank position")  +
-    ggtitle("Rank Position of COVID-19 Posts currently the front page of reddit (TOP)") +
-    xlab(paste("Minutes prior to the snapshot (up to ",abs(min.top.xlim/60), " hours)", sep=""))
+    ggtitle(paste("COVID-19 Posts Promoted by Reddit's TOP Algorithm, ", snapshot.datetime, sep="")) +
+    xlab(paste("Minutes before the most recent snapshot, at ", snapshot.datetime, ".\n\n",
+               "Rank position over time of ",length(latest.top.rank.ids),
+               " posts currently appearing on reddit's TOP algorithm.  Top: 0.  Bottom: -99. \n",
+               "Citizens & Technology Lab, Cornell University. CC BY-ND 4.0.\n",
+               "Report and data: covid-algotracker.citizensandtech.org", sep=""))
 ````
 
-# Top `r num.top.obs` Communities Promoted by Reddit's Algorithms Over `r observation.period.days` Days
+# Top Communities Promoted by Reddit's Algorithms
+
+Reddit's algorithms recommended these subreddits at least `r min.recommended.freq` times over the last `r observation.period.days` days.
 
 ```{r echo=FALSE, results=TRUE}
 
 recent.subs <- as.data.frame(table(as.character(subset(recent.posts, covid_19==1)$subreddit)))
-recommended.subs <- head(recent.subs[order(-recent.subs$Freq),], num.top.obs)
+recommended.subs <- subset(recent.subs[order(-recent.subs$Freq),], Freq>=min.recommended.freq)
 row.names(recommended.subs) <- recommended.subs$Var1
 names(recommended.subs) <- c("subreddit", "frequency")
 kable(recommended.subs[c("frequency")],
-    caption=paste("Top ", num.top.obs, " <strong>subreddit communities</strong> with COVID-19 content promoted by reddit's algorithms in the past ",
+    caption=paste("Top <strong>subreddit communities</strong> with COVID-19 content promoted by reddit's algorithms in the past ",
                   observation.period.days, " days.",sep=""))
 
 ````
 
 
-# Top `r num.top.obs` domains Promoted by Reddit's Algorithms Over `r observation.period.days` Days
+# Top domains Promoted by Reddit's Algorithms
+These domains were recommended at least `r min.recommended.freq` times by HOT or TOP over the last `r observation.period.days` days.
 ```{r echo=FALSE, results=TRUE}
 recent.domains <- as.data.frame(table(as.character(subset(recent.posts, covid_19==1)$domain)))
-recommended.domains <- head(recent.domains[order(-recent.domains$Freq),], num.top.obs)
+recommended.domains <- subset(recent.domains[order(-recent.domains$Freq),], Freq>=min.recommended.freq)
 row.names(recommended.domains) <- recommended.domains$Var1
 names(recommended.domains) <- c("domain", "frequency")
 kable(recommended.domains[c("frequency")],
-    caption=paste("Top ",num.top.obs," <strong>web domains</strong> with COVID-19 content promoted by reddit's algorithms in the past ",
+    caption=paste("Top <strong>web domains</strong> with COVID-19 content promoted by reddit's algorithms in the past ",
                   observation.period.days, " days.",sep=""))
 
 ````
 
+# Ethics
+This dashboard summarizes and archives information that is currently public on reddit's front page. To reduce risks to communities, we have chosen not to link directly to discussions. We have also removed all author information from our archival datasets.
+
+You can read more about CAT Lab's ethics values and processes in our post on [strategies for ethical, accountable online behavior research](https://medium.com/@natematias/3-strategies-for-accountable-ethical-online-behavioral-research-f6ae134458fc).
+
+<!--
 # How to Help
 We have been working with r/science moderators on public health interventions since COVID-19 reached the US. We have lined up collaborations with communities of tens of millions on reddit and are currently fundraising support for a coordinator to help us organize redditors to expand the quality and timeliness of public health information on reddit. We developed this dashboard to guide our own efforts, and also to showcase the information available to our software for community-led behavioral research on reddit.
 
@@ -259,16 +382,54 @@ If your community is interested to join us, **TODO: TAKE ACTION**
 
 If you can help us find the resources to hire a part-time coordinator, please contact J. Nathan Matias nathan.matias@cornell.edu. CAT Lab is a proudly [industry-independent](https://citizensandtech.org/2020/01/industry-independent-research/) research lab at Cornell University.
 
-# About CAT Lab
-The [Citizens and Technology Lab](https://citizensandtech.org) at Cornell University with communities to study the social impacts of digital technologies and discover effective ideas for change. CAT Lab is led by [Dr. J. Nathan Matias](https://natematias.com), an assistant professor in the department of Communication.
+-->
 
-Working with communities and movements, we discover practical knowledge that also contributes to science, holds companies accountable, and is guided by the people most affected. Communities bring their problems, deep knowledge, and desire for change. We offer our expertise in scientific research and a software platform for coordinating citizen behavioral science.
+# About CAT Lab
+The [Citizens and Technology Lab](https://citizensandtech.org) at Cornell University with communities to study the social impacts of digital technologies and discover effective ideas for change. CAT Lab is led by [Dr. J. Nathan Matias](https://natematias.com), an assistant professor in the department of Communication. 
+
+
+Working with communities and movements, we discover practical knowledge that also contributes to science, holds companies accountable, and is guided by the people most affected. Communities bring their problems, deep knowledge, and desire for change. We bring expertise in scientific research and a software platform for coordinating citizen behavioral science.
+
+Over a dozen communities with tens of millions of people have worked with CAT Lab since 2016 on reddit, Wikipedia, and Twitter. We have tested practical ways to prevent harassment, fight misinformation, broaden inclusion, manage civic discourse, and protect freedom of expression. Our discoveries have directly influenced community practice, corporate policies, and government discussions worldwide. These findings are regularly published by the world's top scientific journals in the social sciences and computer science. 
 
 # References and Further Reading
 
+* Leavitt, A., & Robinson, J. J. (2017). [Upvote My News: The Practices of Peer Information Aggregation for Breaking News on reddit.com](https://dl.acm.org/doi/abs/10.1145/3134700). Proceedings of the ACM on Human-Computer Interaction, 1(CSCW), 1-18.
+* Leavitt, A., & Robinson, J. J. (2017, February). [The role of information visibility in network gatekeeping: Information aggregation on Reddit during crisis events](https://dl.acm.org/doi/pdf/10.1145/2998181.2998299). In Proceedings of the 2017 ACM conference on computer supported cooperative work and social computing (pp. 1246-1261).
 * Larson, H. J. (2018). [The biggest pandemic risk? Viral misinformation](https://www.nature.com/articles/d41586-018-07034-4). Nature, 562(7726), 309-310.
 * Matias, J. N. (2019). [Preventing harassment and increasing group participation through social norms in 2,190 online science discussions](https://www.pnas.org/content/early/2019/04/23/1813486116). Proceedings of the National Academy of Sciences, 116(20), 9785-9789.
 * Matias, J. N. (pre-print, 2018). [Nudging Algorithms by Influencing Human Behavior. Effects of Encouraging Fact-Checking on News Algorithms](https://osf.io/m98b6/). https://osf.io/m98b6/
 * Matias, J. N., & Mou, M. (2018, April). [CivilServant: Community-led experiments in platform governance](https://natematias.com/media/Community_Led_Experiments-CHI_2018.pdf). In Proceedings of the 2018 CHI conference on human factors in computing systems (pp. 1-13).
 * Vaughan, E., & Tinker, T. (2009). [Effective health risk communication about pandemic influenza for vulnerable populations](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4504362/). American Journal of Public Health, 99(S2), S324-S332.
 
+
+<!-- Social Media Preview Image generation and metadata -->
+
+````{r echo=FALSE, results=FALSE}
+
+## Facebook link thumbnail image sizes: 1200 x 630
+
+p <- ggplot(latest.top.rank.snapshots, aes(age.minutes, rank_position, group=id, col=factor(covid_19))) +
+    geom_line(size=1.3) + 
+    cat.theme +
+    scale_x_continuous(breaks=seq(min.top.xlim, 0, 60), limits=c(min.top.xlim, 0)) +
+    theme(legend.position = c(0.002, 0.99), 
+          legend.justification = c(0, 1),
+          legend.text = element_text(size=24, face="bold"),
+          legend.title=element_text(size=24, face="bold")) +
+    theme(axis.title=element_blank(),
+          axis.text=element_blank(),
+          axis.ticks=element_blank()) +
+    scale_colour_manual(values = covidpalette, name="COVID-19\nrelated") +
+    xlab("") + ylab("") +
+    ggsave(file.path(HOME.DIR, "assets", "preview-image.png"), width=12, height=6.3, dpi=100)
+
+````
+
+<meta property="og:url"                content="https://covid-algotracker.citizensandtech.org/" />
+<meta property="og:type"               content="article" />
+<meta property="og:title"              content="COVID-19 Reddit Algo-Tracker" />
+<meta property="og:description"        content="How do Reddit’s popularity algorithms promote information about COVID-19?" />
+<meta property="og:image"              content="assets/preview-image.png" />
+<meta name="twitter:card"              content="summary" />
+<meta name="twitter:creator"           content="@natematias" />
