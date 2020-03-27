@@ -1,8 +1,14 @@
 export CS_ENV=""
 export ALGOTRACKER_BASE_DIR=""
+export ALGOTRACKER_OUTPUT_DIR=""
+
+export AIRBRAKE_ENABLED=""
 export AIRBRAKE_API_KEY=""
 export AIRBRAKE_PROJECT_ID=""
+export AIRBRAKE_ENVIRONMENT=""
+export AIRBRAKE_BASE_URL=""
 
-export ALGOTRACKER_OUTPUT_DIR=""
+# Python's logging values: 10 for DEBUG, 20 for INFO, and upward
+export LOG_LEVEL="10"
 
 source venv/bin/activate

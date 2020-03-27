@@ -62,7 +62,7 @@ cat.theme <-  theme_bw() +
 options(repr.plot.width=6, repr.plot.height=3)
 
 ## set directories and other global settings
-HOME.DIR = "/home/nathan/covid-algotracker"
+HOME.DIR = file.path(getSrcDirectory(function() {}), "..")
 most.recent.folder.name <- as.character(max(as.numeric(SplitPath(Sys.glob(
         file.path(HOME.DIR, "data-archive", "reddit", "[0-9]*")))$filename)))
 DATA.FOLDER = file.path(HOME.DIR, "data-archive", "reddit", most.recent.folder.name)
