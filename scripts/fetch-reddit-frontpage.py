@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import inspect, os, sys, copy, pytz, re, glob, csv, uuid, time, requests, math, jsonlines, datetime, shutil
 
 import airbrake
