@@ -193,10 +193,10 @@ This dashboard is generated every 30 minutes using the latest data within CAT La
     * reddit's TOP algorithm
 * data about posts, currently queried from Jason Baumgartner's [PushShift service](https://pushshift.io/)
 
-With every report, we also publish research-quality datasets to [covid-algotracker on github](https://github.com/natematias/covid-algotracker/tree/master/data-archive/reddit), along with information about the settings, keywords, and software behind the data.
+With every report, this software also publishes research-quality datasets to [covid-algotracker on github](https://github.com/natematias/covid-algotracker/tree/master/data-archive/reddit), along with information about the settings, keywords, and software behind the data.
 
 ## How We Identify COVID-19 Posts
-This report identified a post as related to COVID-19 if the lower-case title or the text of the submission matched any of the following terms ([code here](https://github.com/natematias/covid-algotracker/blob/master/scripts/fetch-reddit-frontpage.py)):
+This report identified a post as related to COVID-19 if the lower-case title or the text of the submission matched any of the following English language terms ([code here](https://github.com/natematias/covid-algotracker/blob/master/scripts/fetch-reddit-frontpage.py)). Terms will be updated as the pandemic evolves.
 
 ````{r echo = FALSE, results=TRUE}
 config.json$terms
@@ -370,7 +370,7 @@ kable(recommended.domains[c("frequency")],
 ````
 
 # Ethics
-This dashboard summarizes and archives information that is currently public on reddit's front page. To reduce risks to communities, we have chosen not to link directly to discussions. We have also removed all author information from our archival datasets.
+This dashboard summarizes and archives information that is currently public on reddit's front page. To reduce risks to communities, this dashboard does not link directly to discussions. All author information is removed from the archival datasets.
 
 You can read more about CAT Lab's ethics values and processes in our post on [strategies for ethical, accountable online behavior research](https://medium.com/@natematias/3-strategies-for-accountable-ethical-online-behavioral-research-f6ae134458fc).
 
