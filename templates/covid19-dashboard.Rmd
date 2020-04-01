@@ -368,7 +368,7 @@ kable(recommended.subs[c("frequency")],
 ````
 
 
-# Top domains Promoted by reddit's algorithms
+# Top domains promoted by reddit's algorithms
 These domains were recommended at least `r min.recommended.freq` times by HOT or TOP over the last `r observation.period.days` days.
 ```{r echo=FALSE, results=TRUE}
 recent.domains <- as.data.frame(table(as.character(subset(recent.posts, covid_19==1)$domain)))
@@ -386,12 +386,12 @@ This dashboard summarizes and archives information that is currently public on r
 
 You can read more about CAT Lab's ethics values and processes in our post on [strategies for ethical, accountable online behavior research](https://medium.com/@natematias/3-strategies-for-accountable-ethical-online-behavioral-research-f6ae134458fc).
 
-# Why you shouldn't use this dashboard for interventions (yet)
+# Don't use this dashboard for interventions (yet)
 At CAT Lab, we believe that [powerful digital interventions ought to be tested](https://medium.com/mit-media-lab/the-obligation-to-experiment-83092256c3e9) to discover if they help rather than harm, and to enable public accountability. Interventions that form feedback loops with algorithms can have unpredictable side-effects, and we advise against proceeding without evaluation. To add extra friction to interventions, we are only updating the dashboard every six hours. The research data will still provide fine-grained information for people working to study and model reddit's algorithm behavior by the minute.
 
 We are currently talking to funders about a project we developed with reddit communities and public health experts to test public health information interventions with people and algorithms. If you have ideas for funding opportunities, please contact J. Nathan Matias at nathan.matias@cornell.edu
 
-# Questions and Bugs
+# Questions and bugs
 
 If you find a bug or have a question, please [post it to the issues page](https://github.com/natematias/covid-algotracker/issues) for this project on github. Thanks!
 
@@ -402,7 +402,7 @@ Working alongside communities and volunteers, we discover practical knowledge th
 
 Over a dozen communities with tens of millions of people have worked with CAT Lab since 2016 on reddit, Wikipedia, and Twitter. We have tested practical ways to prevent harassment, fight misinformation, broaden inclusion, manage civic discourse, and protect freedom of expression. Our discoveries have directly influenced community practice, corporate policies, and government discussions worldwide. These [industry-independent](https://citizensandtech.org/2020/01/industry-independent-research/) findings are regularly published by the world's top scientific journals in the social sciences and computer science. 
 
-# References and Further Reading
+# References and further reading
 
 * Leavitt, A., & Robinson, J. J. (2017). [Upvote My News: The Practices of Peer Information Aggregation for Breaking News on reddit.com](https://dl.acm.org/doi/abs/10.1145/3134700). Proceedings of the ACM on Human-Computer Interaction, 1(CSCW), 1-18.
 * Leavitt, A., & Robinson, J. J. (2017, February). [The role of information visibility in network gatekeeping: Information aggregation on reddit during crisis events](https://dl.acm.org/doi/pdf/10.1145/2998181.2998299). In Proceedings of the 2017 ACM conference on computer supported cooperative work and social computing (pp. 1246-1261).
