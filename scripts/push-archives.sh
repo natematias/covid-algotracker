@@ -6,7 +6,7 @@ repo_path="$1"
 run_dt=`date -u --rfc-3339=seconds`
 
 if [ -z "$repo_path" ]; then
-  echo "usage: run-push-archive.sh REPO_PATH"
+  echo "usage: push-archives.sh REPO_PATH"
   exit 1;
 fi
 
