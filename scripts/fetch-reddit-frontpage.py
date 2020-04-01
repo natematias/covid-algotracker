@@ -460,18 +460,18 @@ else:
 
 ## output rank snapshot dataset
 for key in list(rank_keys.values()):
-    outfile_name = "rank_timeseries_{0}_{1}.csv".format(
-        key,
-        timestamp_string
+    outfile_name = "{0}_rank_timeseries_{1}.csv".format(
+        timestamp_string,
+        key
     )
     log.info("writing {0}".format(outfile_name))
     pd.DataFrame(output_snapshots[key]).to_csv(os.path.join(output_folder, outfile_name), index=False)
 
 ## output dataset of all posts with max rank
-all_posts_filename = "promoted_posts_{0}.csv".format(timestamp_string)
+all_posts_filename = "{0}_promoted_posts.csv".format(timestamp_string)
 log.info("writing {0}".format(all_posts_filename))
 pd.DataFrame(list(all_posts.values())).to_csv(os.path.join(output_folder,all_posts_filename), index=False)
 
 ## copy configuration file
 shutil.copyfile(os.path.join(OUTPUT_BASE_DIR,"../config", "algotracker-config.json"), 
-                os.path.join(output_folder, "algotracker-config-{0}.json".format(timestamp_string)))
+                os.path.join(output_folder, "{0}_algotracker-config.json".format(timestamp_string)))
