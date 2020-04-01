@@ -1,6 +1,7 @@
 export CS_ENV=""
 export ALGOTRACKER_BASE_DIR=""
 export ALGOTRACKER_OUTPUT_DIR=""
+export ALGOTRACKER_PAGE_DIR=""
 
 export AIRBRAKE_ENABLED=""
 export AIRBRAKE_API_KEY=""
