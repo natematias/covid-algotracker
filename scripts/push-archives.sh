@@ -12,9 +12,10 @@ fi
 
 cd $repo_path
 
-git add index.html
 git add data-archive/*
 git add page-archive/*
+git add index.html
+git add assets/preview-image.png
 
 git commit -m "Automated archive update at $run_dt"
 git push origin
