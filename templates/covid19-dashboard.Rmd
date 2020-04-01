@@ -208,6 +208,11 @@ This dashboard is generated every six hours using the latest data within CAT Lab
 
 With every report, this software also publishes research-quality datasets to [covid-algotracker on github](https://github.com/natematias/covid-algotracker/tree/master/data-archive/reddit), along with information about the settings, keywords, and software behind the data.
 
+This report is based on 3 days of data up to the following snapshots:
+
+* Last HOT snapshot: `r as.character(latest.hot.ranks$rank_time[[1]])`
+* Last TOP snapshot: `r as.character(latest.top.ranks$rank_time[[1]])`
+
 ## How we identify COVID-19 posts
 This report identified a post as related to COVID-19 if the lower-case title or the text of the submission matched any of the following English language terms ([code here](https://github.com/natematias/covid-algotracker/blob/master/scripts/fetch-reddit-frontpage.py)). Terms will be updated as the pandemic evolves.
 
