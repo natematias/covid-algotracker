@@ -12,9 +12,9 @@ fi
 
 cd $repo_path
 
-echo Pulling latest version...
+echo Pushing archives.
+echo Pulling latest version.
 git pull
-echo Pushing archives...
 echo Adding changes.
 git add data-archive/*
 git add page-archive/*
