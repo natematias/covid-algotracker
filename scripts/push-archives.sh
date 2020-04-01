@@ -12,6 +12,8 @@ fi
 
 cd $repo_path
 
+echo Pulling latest version...
+git pull
 echo Pushing archives...
 echo Adding changes.
 git add data-archive/*
