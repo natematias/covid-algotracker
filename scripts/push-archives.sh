@@ -12,11 +12,15 @@ fi
 
 cd $repo_path
 
+echo Pushing archives...
+echo Adding changes.
 git add data-archive/*
 git add page-archive/*
 git add index.html
 git add assets/preview-image.png
 
+echo Committing archives.
 git commit -m "Automated archive update at $run_dt"
 git push origin
 
+echo Archives successfully pushed."
