@@ -189,17 +189,17 @@ earliest.top.rank.ids <- unique(subset(top.ranks, rank_id == earliest.top.rankin
 
 <!-- CAT Lab Logo (float right) -->
 <img src="../assets/CAT-square-logo.png" style="width:30%; margin:10px; float:right;"/> 
-Since 2016, the [Citizens and Technology Lab](https://citizensandtech.org/about-cat-lab/) (CAT Lab) has taken ongoing snapshots of reddit's algorithms every 2-3 minutes. We created this dashboard to inform the design of our collaborations with reddit communities on COVID-19 public health research.
+Since 2016, the [Citizens and Technology Lab](https://citizensandtech.org/about-cat-lab/) (CAT Lab) has taken ongoing snapshots of reddit's algorithms every 2-3 minutes. We created this dashboard to inform the design of our collaborations with reddit communities on COVID-19 public health research. We have made the dashboard, data, and code public for researchers and practitioners who study the role of algorithms in society.
 
 During a pandemic, people need evolving information to guide our health decisions and what we share with others. These needs continue across the months-long [pandemic cycle of prevention, resilience, and recovery](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4504362/). 
 
 Reddit is already a major hub of COVID-19 information for hundreds of millions worldwide. News and norms spread rapidly across the site, promoted by people and algorithms. Reddit memes, jokes, and ideas are also shared widely on other platforms. While the reddit ecosystem could be a powerful force for good, public health experts have also argued that [cascades of human and algorithm sharing are the biggest pandemic risk](https://www.nature.com/articles/d41586-018-07034-4). And if you wonder whether this social news site matters, reddit reportedly has [more active users than Twitter](https://thenextweb.com/contributors/2018/04/19/reddit-now-active-users-twitter-engaging-porn/).
 
-One reason to monitor algorithms is that information interventions can have unexpected side-effects on ranking algorithms. In a large-scale experiment with r/worldnews on reddit, I found that [encouraging fact-checking influenced what reddit's popularity algorithms promoted by influencing human behavior](https://osf.io/m98b6/).
+One reason to monitor algorithms is that information interventions can have unexpected side-effects on ranking algorithms. In a large-scale experiment with r/worldnews on reddit, we found that [encouraging fact-checking influenced what reddit's popularity algorithms promoted by influencing human behavior](https://osf.io/m98b6/).
 
 ## How we collect data
 <img src="../assets/algotracker-logo.png" style="margin:10px;width:30%; float:right;">
-This dashboard is generated every six hours using the latest data within CAT Lab's research software. The output of this dashboard is based on the last `r observation.period.days` (we are limiting how often we update the dashboard for ethics reasons listed below). It uses these sources:
+This dashboard is generated every six hours using the latest data within CAT Lab's research software. The output of this dashboard is based on the last `r observation.period.days` days (we are limiting how often we update the dashboard for ethics reasons listed below). It uses these sources:
 
 * snapshots every 2 minutes of two key reddit algorithms:
     * reddit's HOT algorithm, the default popularity ranking on the site
@@ -227,7 +227,7 @@ This dashboard reviews posts that appeared anywhere in the top 100 recommendatio
 
 HOT and TOP aren't the only algorithms that influence what people see. For several years now, reddit has provided a personalized newsfeed algorithm to logged in users, based on the communities that people subscribe to. The company has also developed BEST and POPULAR algorithms, which can add if there's interest.
 
-Here's what that trajectory looks like for one randomly-sampled post that rose and fell from prominence. In the chart, a rank position of 0 means that the article is at the very top. People typically have to scroll down to see more than 3-4 posts. A rank position of -99 means that you would have to scroll past 99 other posts to see that one. Notice that the HOT rankings are more volatile than TOP:
+Here's what that trajectory looks like for one randomly-sampled post that rose and fell from prominence. In the chart, a rank position of 0 means that the article is at the very top. People typically have to scroll down to see more than 3-4 posts. A rank position of -99 means that you would have to scroll past 99 other posts to see that one. In this example, notice that the HOT rankings are more volatile than TOP:
 
 ````{r echo=FALSE, results=FALSE, fig.width=8, fig.height=3, dpi=96, pngquant = '--quality 80-90'}
 
