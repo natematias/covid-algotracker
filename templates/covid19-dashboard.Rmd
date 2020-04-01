@@ -151,6 +151,17 @@ latest.top.posts <- latest.top.posts[order(-latest.top.posts$rank_position),]
 
 latest.hot.rank.snapshots <- subset(hot.ranks, id %in% latest.hot.rank.ids)
 latest.top.rank.snapshots <- subset(top.ranks, id %in% latest.top.rank.ids)
+
+## earliest hot and top rank IDs
+earliest.hot.ranking <- min(hot.ranks$rank_id)
+earliest.top.ranking <- min(top.ranks$rank_id)
+
+earliest.hot.rank.ids <- unique(subset(hot.ranks, rank_id == earliest.hot.ranking & 
+                                       is.na(ups)!=TRUE)$id)
+
+earliest.top.rank.ids <- unique(subset(top.ranks, rank_id == earliest.top.ranking & 
+                                       is.na(ups)!=TRUE)$id)
+
 ````
 
 <!-- Matomo -->
@@ -205,7 +216,7 @@ config.json$terms
 # How Algorithms Promote Reddit Posts Over Time
 Reddit's public rankings are a classic recommender system. Using information from upvotes, downvotes, post age, and maybe other data, reddit's algorithms create a ranked list suggestions to readers. According to Christian Sandvig, feeds like this [outsource human knowledge and attention to machines](https://citizensandtech.org/2020/03/the-feed-sandvig-2020/). Hybrid human-machine curation can be [valuable and difficult during crises](https://dl.acm.org/doi/pdf/10.1145/2998181.2998299), as Alex Leavitt has described in extensive research on reddit.
 
-This dashboard reviews posts that appeared anywhere in the top 100 recommendations for TOP and HOT. On average over the last `r observation.period.days` days, COVID-19 articles that appeared anywhere in the rankings stayed on HOT for `r sprintf("%.01f", mean(subset(recent.posts, (id %in% latest.hot.rank.ids)!=TRUE & front_hot_seconds!=0 & covid_19==1)$front_hot_seconds)/60./60.)` hours and on TOP for `r sprintf("%.01f", mean(subset(recent.posts, (id %in% latest.top.rank.ids)!=TRUE & front_top_seconds!=0 & covid_19==1)$front_top_seconds )/60./60.)` hours.
+This dashboard reviews posts that appeared anywhere in the top 100 recommendations for TOP and HOT. On average over the last `r observation.period.days` days, COVID-19 articles that appeared anywhere in the rankings stayed on HOT for `r sprintf("%.01f", mean(subset(recent.posts, (id %in% latest.hot.rank.ids)!=TRUE & (id %in% earliest.hot.rank.ids)!=TRUE & front_hot_seconds!=0 & covid_19==1)$front_hot_seconds)/60./60.)` hours and on TOP for `r sprintf("%.01f", mean(subset(recent.posts, (id %in% latest.top.rank.ids)!=TRUE & (id %in% earliest.top.rank.ids)!=TRUE & front_top_seconds!=0 & covid_19==1)$front_top_seconds )/60./60.)` hours.
 
 HOT and TOP aren't the only algorithms that influence what people see. For several years now, Reddit has provided a personalized newsfeed algorithm to logged in users, based on the communities that people subscribe to. The company has also developed BEST and POPULAR algorithms, which can add if there's interest.
 
@@ -216,6 +227,8 @@ Here's what that trajectory looks like for one randomly-sampled post that rose a
 illustration.post.id <- as.character(sample(
     subset(recent.posts, (id %in% latest.hot.rank.ids)!=TRUE & 
                          (id %in% latest.top.rank.ids)!=TRUE & 
+                         (id %in% earliest.top.rank.ids)!=TRUE & 
+                         (id %in% earliest.top.rank.ids)!=TRUE & 
                          front_hot_seconds > 0 &
                          front_top_seconds > 0 & 
                          max_top > -50 & 
@@ -245,7 +258,7 @@ ggplot(subset(hot.ranks, id==illustration.post.id), aes(age.minutes, rank_positi
                   '"', illustration.post.title, '"', sep="")) +
     xlab(paste("Algorithm rank position over time for a reddit post (covering ",
                abs((max.both.xlim - min.both.xlim)/60), 
-               " hours). Top: 0.  Bottom: -99. \n",
+               " hours). Top: 0.  Bottom: -99 \n",
                "Interruptions can be caused by community removal. ",
                "Last snapshot: ", snapshot.datetime, ".\n",
                "Citizens & Technology Lab, Cornell University. CC BY-ND 4.0.\n",
@@ -263,7 +276,7 @@ ggplot(subset(top.ranks, id==illustration.post.id), aes(age.minutes, rank_positi
                   '"', illustration.post.title, '"', sep="")) +
     xlab(paste("Algorithm rank position over time for a reddit post (covering ",
                abs((max.both.xlim - min.both.xlim)/60), 
-               " hours). Top: 0.  Bottom: -99. \n",
+               " hours). Top: 0.  Bottom: -99\n",
                "Interruptions can be caused by community removal. ",
                "Last snapshot: ", snapshot.datetime, ".\n",
                "Citizens & Technology Lab, Cornell University. CC BY-ND 4.0.\n",

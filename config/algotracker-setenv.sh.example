@@ -9,6 +9,6 @@ export AIRBRAKE_ENVIRONMENT=""
 export AIRBRAKE_BASE_URL=""
 
 # Python's logging values: 10 for DEBUG, 20 for INFO, and upward
-export LOG_LEVEL="10"
+export ALGOTRACKER_LOG_LEVEL="10"
 
 source venv/bin/activate
