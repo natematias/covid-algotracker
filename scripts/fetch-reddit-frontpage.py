@@ -34,7 +34,6 @@ def get_logger(env, airbrake_enabled, log_level):
 
     stdout_handler = logging.StreamHandler(sys.stdout)
     stdout_handler.setLevel(log_level)
-    stdout_handler.setFormatter(formatter)
     log.addHandler(stdout_handler)
 
     return log
@@ -49,6 +48,10 @@ sys.path.append(BASE_DIR)
 AIRBRAKE_ENABLED = bool(os.environ["ALGOTRACKER_AIRBRAKE_ENABLED"])
 LOG_LEVEL = int(os.environ["ALGOTRACKER_LOG_LEVEL"])
 log = get_logger(ENV, AIRBRAKE_ENABLED, LOG_LEVEL)
+
+def handle_unhandled_exception(exc_type, exc_value, exc_traceback):
+    log.error("Unhandled exception", exc_info=(exc_type, exc_value, exc_traceback))
+sys.excepthook = handle_unhandled_exception
 
 with open(os.path.join(BASE_DIR, "config") + "/{env}.json".format(env=ENV), "r") as config:
     DBCONFIG = json.loads(config.read())
@@ -140,7 +143,7 @@ def construct_rank_vectors(is_subpage):
     all_posts = defaultdict(post_rankings)
     
     for pt in [PageType.TOP, PageType.HOT]:
-        print(pt)
+        log.info(pt)
         pages = db_session.query(FrontPage).filter(and_(FrontPage.page_type == pt.value,
                                                             FrontPage.created_at >= opening_date))
         for page in pages:
@@ -210,7 +213,7 @@ fmax_rank_vectors, db_posts, all_pages, rank_posts = construct_rank_vectors(Fals
 
 rank_vector_end = datetime.datetime.utcnow()
 
-print("Completed rank vector collection from {0} posts in in {1} seconds".format(
+log.info("Completed rank vector collection from {0} posts in in {1} seconds".format(
     len(fmax_rank_vectors),
     (rank_vector_end - rank_vector_start).total_seconds()
 ))
@@ -218,7 +221,7 @@ print("Completed rank vector collection from {0} posts in in {1} seconds".format
 
 # ### For all posts, Produce the Rank Position for the Whole Observed Period Up to the Last Observation or 6 Hours, Whichever is Longer
 
-print("Creating Regular Snapshots for Every Post")
+log.info("Creating Regular Snapshots for Every Post")
 counter = 0
 for post in db_posts.values():
     counter += 1
@@ -335,7 +338,7 @@ est_query_time = 0.3
 bg_begin = datetime.datetime.utcnow()
 
 ## dict of posts, with a key associated with the post ID
-print("Loading {0} posts from Pushshift with {1} queries. Estimate time: {2} minutes".format(
+log.info("Loading {0} posts from Pushshift with {1} queries. Estimate time: {2} minutes".format(
     len(fp_post_ids),
     math.ceil(len(fp_post_ids)/page_size),
     math.ceil(math.ceil((len(fp_post_ids)/page_size)*courtesy_delay + (len(fp_post_ids)/page_size)*est_query_time)/60)
@@ -359,7 +362,7 @@ while(head <= len(fp_post_ids)):
 
 bg_end = datetime.datetime.utcnow()
 
-print("Queried Pushshift in {0} seconds".format((bg_end - bg_begin).total_seconds()))
+log.info("Queried Pushshift in {0} seconds".format((bg_end - bg_begin).total_seconds()))
 
 #######################################
 ## MERGE BAUMGARTNER DATA WITH RANKING DATA
@@ -447,7 +450,7 @@ for post_id, post in all_posts.items():
     
     total_reviewed += 1
 
-print("""
+log.info("""
 Out of {} posts appearing on reddit front pages (TOP and HOT) 
 between {} and {}, {} are covid-19 related ({:.02f}%)""".format(
     total_reviewed,
@@ -478,9 +481,9 @@ output_folder = os.path.join(OUTPUT_BASE_DIR, "reddit", timestamp_string)
 try:
     os.mkdir(output_folder)
 except OSError:
-    print ("Creation of the directory %s failed" % output_folder)
+    log.error("Creation of the directory %s failed" % output_folder)
 else:
-    print ("Successfully created the directory %s " % output_folder)
+    log.info("Successfully created the directory %s " % output_folder)
 
 ## output rank snapshot dataset
 for key in list(rank_keys.values()):
@@ -488,12 +491,12 @@ for key in list(rank_keys.values()):
         key,
         timestamp_string
     )
-    print("writing {0}".format(outfile_name))
+    log.info("writing {0}".format(outfile_name))
     pd.DataFrame(output_snapshots[key]).to_csv(os.path.join(output_folder, outfile_name), index=False)
 
 ## output dataset of all posts with max rank
 all_posts_filename = "promoted_posts_{0}.csv".format(timestamp_string)
-print("writing {0}".format(all_posts_filename))
+log.info("writing {0}".format(all_posts_filename))
 pd.DataFrame(list(all_posts.values())).to_csv(os.path.join(output_folder,all_posts_filename), index=False)
 
 ## copy configuration file
