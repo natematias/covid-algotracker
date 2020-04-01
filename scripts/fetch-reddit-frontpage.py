@@ -26,6 +26,9 @@ AIRBRAKE_ENABLED = bool(os.environ["ALGOTRACKER_AIRBRAKE_ENABLED"])
 LOG_LEVEL = int(os.environ["ALGOTRACKER_LOG_LEVEL"])
 log = logutil.get_logger(ENV, AIRBRAKE_ENABLED, LOG_LEVEL, handle_unhandled_exceptions=True)
 
+PS_RETRIES = 5
+PS_RETRY_DELAY = 5
+
 with open(os.path.join(BASE_DIR, "config") + "/{env}.json".format(env=ENV), "r") as config:
     DBCONFIG = json.loads(config.read())
 
@@ -157,9 +160,17 @@ def getPSPosts(ids):
     url = "https://api.pushshift.io/reddit/search/submission/?ids={0}".format(
     ",".join(ids)
     )
-    r = requests.get(url)
-    data = json.loads(r.text)
-    return data['data']
+    data = None
+    for attempt in range(1, PS_RETRIES+1):
+        try:
+            r = requests.get(url)
+            data = json.loads(r.text)
+        except:
+            log.exception("Unable to get posts from Pushshift on attempt %d of %d.",
+                attempt,
+                PS_RETRIES+1)
+            time.sleep(PS_RETRY_DELAY)
+    return data['data'] if data else []
 
 ## Query Most Recent Front Page
 def query_most_recent_front_page():
