@@ -97,23 +97,23 @@ cat.post <- function(post, ranking){
 ##############################
 ## load posts and rankings
 hot.ranks <- read.csv(file.path(DATA.FOLDER, 
-                               paste("rank_timeseries_hot_",
-                                     most.recent.folder.name,
+                               paste(most.recent.folder.name,
+                                     "_rank_timeseries_hot",
                                      ".csv", sep="")))
 hot.ranks$snapshot.num <- sequence(rle(as.character(hot.ranks$id))$lengths)
 
 
 top.ranks <- read.csv(file.path(DATA.FOLDER, 
-                               paste("rank_timeseries_top_",
-                                     most.recent.folder.name,
+                               paste(most.recent.folder.name,
+                                     "_rank_timeseries_top",
                                      ".csv", sep="")))
 top.ranks$snapshot.num <- sequence(rle(as.character(top.ranks$id))$lengths)
 
 
 
 recent.posts  <- read.csv(file.path(DATA.FOLDER, 
-                               paste("promoted_posts_",
-                                     most.recent.folder.name,
+                               paste(most.recent.folder.name,
+                                     "_promoted_posts",
                                      ".csv", sep="")))
 
 ## Record rank time and age in minutes
@@ -125,8 +125,8 @@ hot.ranks$age.minutes <- as.integer((hot.ranks$rank.time - max(hot.ranks$rank.ti
 
 
 config.json <- fromJSON(file=file.path(DATA.FOLDER, 
-                               paste("algotracker-config-",
-                                     most.recent.folder.name,
+                               paste(most.recent.folder.name,
+                               "_algotracker-config",
                                      ".json", sep="")))
 
 observation.period.days <- as.integer(round(max(as.POSIXct(top.ranks$rank_time)) - min(as.POSIXct(top.ranks$rank_time))))
