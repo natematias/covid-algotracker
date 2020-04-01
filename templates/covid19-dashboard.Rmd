@@ -22,7 +22,8 @@ h1,h2,h3,h4,h5,h6{color:#005073}
 strong.headline{background:#ea532444}
 
 #main a{color:#ea5324;
-        background-image: linear-gradient(180deg,#ea5324,#ea5324);}
+        background-image: linear-gradient(180deg,#ea5324,#ea5324);
+        font-weight:normal;}
 
 #sidebar h2{background-color:#005073}
 #sidebar{background-color:#121d21}
