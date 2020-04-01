@@ -402,7 +402,7 @@ We are currently talking to funders about a project we developed with reddit com
 If you find a bug or have a question, please [post it to the issues page](https://github.com/natematias/covid-algotracker/issues) for this project on github. Thanks!
 
 # About CAT Lab
-The [Citizens and Technology Lab](https://citizensandtech.org) at Cornell University with communities to study the social impacts of digital technologies and discover effective ideas for change. CAT Lab is led by [Dr. J. Nathan Matias](https://natematias.com), an assistant professor in the department of Communication. 
+The [Citizens and Technology Lab](https://citizensandtech.org) at Cornell University works with communities to study the social impacts of digital technologies and discover effective ideas for change. CAT Lab is led by [Dr. J. Nathan Matias](https://natematias.com), an assistant professor in the department of Communication. 
 
 Working alongside communities and volunteers, we discover practical knowledge that also contributes to science, holds companies accountable, and is guided by the people most affected. Communities bring their problems, deep knowledge, and desire for change. We bring expertise in scientific research and a software platform for coordinating citizen behavioral science.
 
