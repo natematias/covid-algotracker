@@ -164,6 +164,7 @@ def getPSPosts(ids):
     for attempt in range(1, PS_RETRIES+1):
         try:
             r = requests.get(url)
+            r.raise_for_status()
             data = json.loads(r.text)
         except:
             log.exception("Unable to get posts from Pushshift on attempt %d of %d.",
