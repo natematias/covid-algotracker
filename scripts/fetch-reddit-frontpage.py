@@ -160,7 +160,6 @@ def getPSPosts(ids):
     url = "https://api.pushshift.io/reddit/search/submission/?ids={0}".format(
     ",".join(ids)
     )
-    data = None
     for attempt in range(1, PS_RETRIES+1):
         try:
             r = requests.get(url)
@@ -169,9 +168,13 @@ def getPSPosts(ids):
         except:
             log.exception("Unable to get posts from Pushshift on attempt %d of %d.",
                 attempt,
-                PS_RETRIES+1)
+                PS_RETRIES)
             time.sleep(PS_RETRY_DELAY)
-    return data['data'] if data else []
+            if attempt == PS_RETRIES:
+                log.error("%s retries exhausted.", PS_RETRIES)
+                log.error("New data could not be fetched from Pushshift. Halting.")
+                sys.exit(1)
+    return data['data']
 
 ## Query Most Recent Front Page
 def query_most_recent_front_page():

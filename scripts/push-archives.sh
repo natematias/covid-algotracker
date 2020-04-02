@@ -25,4 +25,4 @@ echo Committing archives.
 git commit -m "Automated archive update at $run_dt"
 git push origin
 
-echo Archives successfully pushed."
+echo Archives successfully pushed.
