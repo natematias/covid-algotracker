@@ -418,7 +418,7 @@ Over a dozen communities with tens of millions of people have worked with CAT La
 * Matias, J. N., & Mou, M. (2018, April). [CivilServant: Community-led experiments in platform governance](https://natematias.com/media/Community_Led_Experiments-CHI_2018.pdf). In Proceedings of the 2018 CHI conference on human factors in computing systems (pp. 1-13).
 * Vaughan, E., & Tinker, T. (2009). [Effective health risk communication about pandemic influenza for vulnerable populations](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4504362/). American Journal of Public Health, 99(S2), S324-S332.
 
-# Copyright
+# License
 The Citizens and Technology Lab makes this report and associated code available under a [Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International Public License.](https://github.com/natematias/covid-algotracker/blob/master/LICENSE)
 
 <!-- Social Media Preview Image generation and metadata -->
