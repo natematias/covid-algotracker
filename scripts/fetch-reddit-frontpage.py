@@ -172,7 +172,7 @@ def getPSPosts(ids):
             time.sleep(PS_RETRY_DELAY)
             if attempt == PS_RETRIES:
                 log.error("%s retries exhausted.", PS_RETRIES)
-                log.error("New data could not be fetched from Pushshift. Halting.")
+                log.error("New posts could not be fetched from Pushshift. Halting.")
                 sys.exit(1)
     return data['data']
 
