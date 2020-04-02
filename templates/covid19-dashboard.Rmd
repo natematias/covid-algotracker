@@ -211,8 +211,8 @@ With every report, this software also publishes research-quality datasets to [co
 
 This report is based on 3 days of data up to the following snapshots:
 
-* Last HOT snapshot: `r as.character(latest.hot.ranks$rank_time[[1]])`
-* Last TOP snapshot: `r as.character(latest.top.ranks$rank_time[[1]])`
+* Last HOT snapshot: `r as.character(latest.hot.ranks$rank_time[[1]])` UTC
+* Last TOP snapshot: `r as.character(latest.top.ranks$rank_time[[1]])` UTC
 
 ## How we identify COVID-19 posts
 This report identified a post as related to COVID-19 if the lower-case title or the text of the submission matched any of the following English language terms ([code here](https://github.com/natematias/covid-algotracker/blob/master/scripts/fetch-reddit-frontpage.py)). Terms will be updated as the pandemic evolves.
@@ -264,7 +264,8 @@ ggplot(subset(hot.ranks, id==illustration.post.id), aes(age.minutes, rank_positi
     ylim(-100,0) +
     ggtitle(paste("Example trajectory of COVID-19 Post across reddit's HOT rankings:\n",
                   '"', illustration.post.title, '"', sep="")) +
-    xlab(paste("Algorithm rank position over time for a reddit post (covering ",
+    xlab(paste("Minutes before the most recent snapshot, at ", latest.hot.ranks$rank_time[[1]], "\n\n",
+               "Algorithm rank position over time for a reddit post (covering ",
                abs((max.both.xlim - min.both.xlim)/60), 
                " hours). Top: 0.  Bottom: -99 \n",
                "Interruptions can be caused by community removal. ",
@@ -282,7 +283,8 @@ ggplot(subset(top.ranks, id==illustration.post.id), aes(age.minutes, rank_positi
     ylab("Rank position")  +
     ggtitle(paste("Example Trajectory of COVID-19 Post across reddit's TOP rankings:\n",
                   '"', illustration.post.title, '"', sep="")) +
-    xlab(paste("Algorithm rank position over time for a reddit post (covering ",
+    xlab(paste("Minutes before the most recent snapshot, at ", latest.top.ranks$rank_time[[1]], "\n\n",
+               "Algorithm rank position over time for a reddit post (covering ",
                abs((max.both.xlim - min.both.xlim)/60), 
                " hours). Top: 0.  Bottom: -99\n",
                "Interruptions can be caused by community removal. ",
