@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import inspect, os, sys, copy, pytz, re, glob, csv, uuid, time, requests, math, jsonlines, datetime, shutil
+import configparser
 
 import simplejson as json
 import pandas as pd
@@ -26,8 +27,9 @@ AIRBRAKE_ENABLED = bool(os.environ["ALGOTRACKER_AIRBRAKE_ENABLED"])
 LOG_LEVEL = int(os.environ["ALGOTRACKER_LOG_LEVEL"])
 log = logutil.get_logger(ENV, AIRBRAKE_ENABLED, LOG_LEVEL, handle_unhandled_exceptions=True)
 
-PS_RETRIES = 5
-PS_RETRY_DELAY = 5
+FETCH_POSTS_RETRIES = 5
+FETCH_POSTS_RETRY_DELAY = 5
+POST_SOURCE = os.environ["ALGOTRACKER_POST_SOURCE"]
 
 with open(os.path.join(BASE_DIR, "config") + "/{env}.json".format(env=ENV), "r") as config:
     DBCONFIG = json.loads(config.read())
@@ -49,8 +51,14 @@ DBSession = sessionmaker(bind=db_engine)
 db_session = DBSession()
 
 from app.models import *
-from app.models import Base, SubredditPage, FrontPage, Subreddit, Post, ModAction
+from app.models import Base, SubredditPage, FrontPage, Subreddit, Post, ModAction, PrawKey
 from utils.common import PageType
+
+import praw
+from praw.handlers import MultiprocessHandler
+
+PRAW_KEY_ID = os.environ["ALGOTRACKER_PRAW_KEY_ID"]
+
 
 ##################
 ## CONFIGURATION
@@ -155,32 +163,82 @@ def construct_rank_vectors(is_subpage):
                         
     return max_rank_vectors, all_posts, all_pages, rank_posts
 
-## Query PushShift
+
+## Initialize a PRAW instance
+def init_praw():
+    praw_key = db_session.query(PrawKey).filter_by(id=PRAW_KEY_ID).first()
+    access_info = {
+        "access_token": praw_key.access_token,
+        "refresh_token": praw_key.refresh_token,
+        "scope": json.loads(praw_key.scope)
+    }
+
+    config = configparser.ConfigParser()
+    config.read("praw.ini")
+    user_agent = config["DEFAULT"]["user_agent"]
+
+    handler = MultiprocessHandler()
+    r = praw.Reddit(handler=handler, user_agent=user_agent)
+    r.set_access_credentials(**access_info)
+    return r
+
+## Query PRAW for posts
+def get_praw_posts(ids):
+    fullnames = ["t3_%s" % id for id in ids]
+    for attempt in range(1, FETCH_POSTS_RETRIES+1):
+        try:
+            r = init_praw()
+            submissions = r.get_submissions(fullnames)
+            data = [submission.json_dict for submission in submissions]
+            break
+        except:
+            log.exception("Unable to get posts from praw on attempt %d of %d.",
+                attempt,
+                FETCH_POSTS_RETRIES)
+            time.sleep(FETCH_POSTS_RETRY_DELAY)
+            if attempt == FETCH_POSTS_RETRIES:
+                log.error("%s retries exhausted.", FETCH_POSTS_RETRIES)
+                log.error("New posts could not be fetched from praw. Halting.")
+                sys.exit(1)
+    return data
+
+## Query Pushshift
 def getPSPosts(ids):
     url = "https://api.pushshift.io/reddit/search/submission/?ids={0}".format(
     ",".join(ids)
     )
-    for attempt in range(1, PS_RETRIES+1):
+    for attempt in range(1, FETCH_POSTS_RETRIES+1):
         try:
-            r = requests.get(url)
-            r.raise_for_status()
-            data = json.loads(r.text)
+            response = requests.get(url)
+            response.raise_for_status()
+            data = json.loads(response.text)
+            break
         except:
             log.exception("Unable to get posts from Pushshift on attempt %d of %d.",
                 attempt,
-                PS_RETRIES)
-            time.sleep(PS_RETRY_DELAY)
-            if attempt == PS_RETRIES:
-                log.error("%s retries exhausted.", PS_RETRIES)
+                FETCH_POSTS_RETRIES)
+            time.sleep(FETCH_POSTS_RETRY_DELAY)
+            if attempt == FETCH_POSTS_RETRIES:
+                log.error("%s retries exhausted.", FETCH_POSTS_RETRIES)
                 log.error("New posts could not be fetched from Pushshift. Halting.")
                 sys.exit(1)
     return data['data']
+
+## Query either Pushshift or PRAW for posts depending on the environment
+def get_posts(ids):
+    if POST_SOURCE == "pushshift":
+        return getPSPosts(ids)
+    elif POST_SOURCE == "praw":
+        return get_praw_posts(ids)
+    else:
+        log.error("Invalid post source %s specified. Halting.", POST_SOURCE)
+        sys.exit(1)
 
 ## Query Most Recent Front Page
 def query_most_recent_front_page():
     page_object = db_session.query(FrontPage).order_by(desc('created_at')).first()
     posts = json.loads(page_object.page_data)
-    post_data = getPSPosts([x['id'] for x in posts])
+    post_data = get_posts([x['id'] for x in posts])
     post_data_dict = {}
     for post in post_data:
         post_data_dict[post['id']] = post
@@ -318,42 +376,70 @@ for key in rank_keys.values():
 ## Query Post information from Pushshift
 fp_post_ids = list(db_posts.keys())
 
-all_posts = {}
-page_size = 1000
-courtesy_delay = 0.25
-est_query_time = 0.3
+def fetch_and_prepare_praw_posts(fp_post_ids):
+    all_posts = {}
 
-bg_begin = datetime.datetime.utcnow()
+    praw_begin = datetime.datetime.utcnow()
+    log.info("Loading %d posts from praw...", len(fp_post_ids))
 
-## dict of posts, with a key associated with the post ID
-log.info("Loading {0} posts from Pushshift with {1} queries. Estimate time: {2} minutes".format(
-    len(fp_post_ids),
-    math.ceil(len(fp_post_ids)/page_size),
-    math.ceil(math.ceil((len(fp_post_ids)/page_size)*courtesy_delay + (len(fp_post_ids)/page_size)*est_query_time)/60)
+    posts = get_posts(fp_post_ids)
+    for post in posts:
+        all_posts[post['id']] = post
 
-))
+    praw_end = datetime.datetime.utcnow()
+    praw_elapsed = (praw_end - praw_begin).total_seconds()
+    log.info("Queried %d posts in %d seconds", len(posts), praw_elapsed)
 
-head = 0
-tail = page_size
-while(head <= len(fp_post_ids)):
-    sys.stdout.write(".")
-    sys.stdout.flush()
-    ids = fp_post_ids[head:tail]
-    if(len(ids)>0):
-        posts = getPSPosts(ids)
-        for post in posts:
-#                post['post_week'] = datetime.datetime.fromtimestamp(post['created_utc']).strftime("%Y%U")
-            all_posts[post['id']] = post
-    time.sleep(courtesy_delay)
-    head += page_size
-    tail += page_size
+    return all_posts
 
-bg_end = datetime.datetime.utcnow()
+def fetch_and_prepare_pushshift_posts(fp_post_ids):
+    all_posts = {}
+    page_size = 1000
+    courtesy_delay = 0.25
+    est_query_time = 0.3
 
-log.info("Queried Pushshift in {0} seconds".format((bg_end - bg_begin).total_seconds()))
+    bg_begin = datetime.datetime.utcnow()
+
+    ## dict of posts, with a key associated with the post ID
+    log.info("Loading {0} posts from Pushshift with {1} queries. Estimate time: {2} minutes".format(
+        len(fp_post_ids),
+        math.ceil(len(fp_post_ids)/page_size),
+        math.ceil(math.ceil((len(fp_post_ids)/page_size)*courtesy_delay + (len(fp_post_ids)/page_size)*est_query_time)/60)
+
+    ))
+
+    head = 0
+    tail = page_size
+    while(head <= len(fp_post_ids)):
+        sys.stdout.write(".")
+        sys.stdout.flush()
+        ids = fp_post_ids[head:tail]
+        if(len(ids)>0):
+            posts = get_posts(ids)
+            for post in posts:
+    #                post['post_week'] = datetime.datetime.fromtimestamp(post['created_utc']).strftime("%Y%U")
+                all_posts[post['id']] = post
+        time.sleep(courtesy_delay)
+        head += page_size
+        tail += page_size
+
+    bg_end = datetime.datetime.utcnow()
+    log.info("Queried Pushshift in {0} seconds".format((bg_end - bg_begin).total_seconds()))
+    return all_posts
+
+def fetch_and_prepare_posts(fp_post_ids):
+    if POST_SOURCE == "pushshift":
+        return fetch_and_prepare_pushshift_posts(fp_post_ids)
+    elif POST_SOURCE == "praw":
+        return fetch_and_prepare_praw_posts(fp_post_ids)
+    else:
+        log.error("Invalid post source %s specified. Halting.", POST_SOURCE)
+        sys.exit(1)
+
+all_posts = fetch_and_prepare_posts(fp_post_ids)
 
 #######################################
-## MERGE BAUMGARTNER DATA WITH RANKING DATA
+## MERGE BAUMGARTNER DATA (OR PRAW DATA) WITH RANKING DATA
 ## AND ALSO IDENTIFY COVID-19 RELATED POSTS
 
 ## iterate through posts and tag ones related to covid-19
