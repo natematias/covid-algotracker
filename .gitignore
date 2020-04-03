@@ -2,8 +2,10 @@
 logs/*
 *.swp
 .gitconfig
+praw.ini
 config/algotracker-setenv.sh
-run-algotracker-collection.sh
+run-aglotracker-updates.sh
+
 
 
 # Byte-compiled / optimized / DLL files
