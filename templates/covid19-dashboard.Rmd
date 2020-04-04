@@ -120,6 +120,9 @@ recent.posts  <- read.csv(file.path(DATA.FOLDER,
                                paste(most.recent.folder.name,
                                      "_promoted_posts",
                                      ".csv", sep="")))
+recent.posts <- subset(recent.posts, select = -c(ups, score, downs, 
+                                                 subreddit_id, 
+                                                 created_utc))
 
 ## Record rank time and age in minutes
 top.ranks$rank.time <- as.POSIXct(top.ranks$rank_time, origin="1970-01-01")
@@ -205,7 +208,7 @@ This dashboard is generated every six hours using the latest data within CAT Lab
 * snapshots every 2 minutes of two key reddit algorithms:
     * reddit's HOT algorithm, the default popularity ranking on the site
     * reddit's TOP algorithm
-* data about posts, currently queried from Jason Baumgartner's [PushShift service](https://pushshift.io/)
+* data about posts, currently queried from the reddit API at the time of report generation
 
 With every report, this software also publishes research-quality datasets to [covid-algotracker on github](https://github.com/natematias/covid-algotracker/tree/master/data-archive/reddit), along with information about the settings, keywords, and software behind the data.
 
