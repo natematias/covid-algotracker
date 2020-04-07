@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import inspect, os, sys, copy, pytz, re, glob, csv, uuid, time, requests, math, jsonlines, datetime, shutil
 import configparser
+import pickle
 
 import simplejson as json
 import pandas as pd
@@ -14,7 +15,6 @@ import logutil
 ## LOAD ALGOTRACKER CONFIG
 with open("config/algotracker-config.json") as f:
     algotracker_config = json.loads(f.read())
-
 
 ## LOAD CIVILSERVANT CONFIG AND LIBRARIES
 
@@ -57,7 +57,7 @@ from utils.common import PageType
 import praw
 from praw.handlers import MultiprocessHandler
 
-PRAW_KEY_ID = os.environ["ALGOTRACKER_PRAW_KEY_ID"]
+PRAW_PICKLE_PATH = os.environ["ALGOTRACKER_PRAW_PICKLE_PATH"].format(env=ENV)
 
 
 ##################
@@ -166,12 +166,14 @@ def construct_rank_vectors(is_subpage):
 
 ## Initialize a PRAW instance
 def init_praw():
-    praw_key = db_session.query(PrawKey).filter_by(id=PRAW_KEY_ID).first()
-    access_info = {
-        "access_token": praw_key.access_token,
-        "refresh_token": praw_key.refresh_token,
-        "scope": json.loads(praw_key.scope)
-    }
+    #praw_key = db_session.query(PrawKey).filter_by(id=PRAW_KEY_ID).first()
+    #access_info = {
+    #    "access_token": praw_key.access_token,
+    #    "refresh_token": praw_key.refresh_token,
+    #    "scope": json.loads(praw_key.scope)
+    #}
+    with open(PRAW_PICKLE_PATH, "rb") as f:
+        access_info = pickle.load(f)
 
     config = configparser.ConfigParser()
     config.read("praw.ini")
@@ -372,8 +374,8 @@ for key in rank_keys.values():
         for snapshot in post[key]:
             snapshot["in_latest_snapshot".format(key)] = in_last_page
 
-####################################
-## Query Post information from Pushshift
+#########################
+## Query Post information
 fp_post_ids = list(db_posts.keys())
 
 def fetch_and_prepare_praw_posts(fp_post_ids):

@@ -2,7 +2,7 @@ export CS_ENV=""
 export ALGOTRACKER_BASE_DIR=""
 export ALGOTRACKER_OUTPUT_DIR=""
 export ALGOTRACKER_PAGE_DIR=""
-export ALGOTRACKER_PRAW_KEY_ID=""
+export ALGOTRACKER_PRAW_PICKLE_PATH=""
 
 # Should either be "pushshift" or "praw"
 export ALGOTRACKER_POST_SOURCE=""
