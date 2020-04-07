@@ -4,7 +4,7 @@ logs/*
 .gitconfig
 praw.ini
 config/algotracker-setenv.sh
-run-aglotracker-updates.sh
+run-algotracker-updates.sh
 
 
 
