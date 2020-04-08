@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 import inspect, os, sys, copy, pytz, re, glob, csv, uuid, time, requests, math, jsonlines, datetime, shutil
-import configparser
-import pickle
 
 import simplejson as json
 import pandas as pd
@@ -23,7 +21,7 @@ BASE_DIR = os.environ['ALGOTRACKER_BASE_DIR']
 OUTPUT_BASE_DIR = os.environ['ALGOTRACKER_OUTPUT_DIR']
 sys.path.append(BASE_DIR)
 
-AIRBRAKE_ENABLED = bool(os.environ["ALGOTRACKER_AIRBRAKE_ENABLED"])
+AIRBRAKE_ENABLED = bool(int(os.environ["ALGOTRACKER_AIRBRAKE_ENABLED"]))
 LOG_LEVEL = int(os.environ["ALGOTRACKER_LOG_LEVEL"])
 log = logutil.get_logger(ENV, AIRBRAKE_ENABLED, LOG_LEVEL, handle_unhandled_exceptions=True)
 
@@ -57,7 +55,6 @@ from utils.common import PageType
 import praw
 from praw.handlers import MultiprocessHandler
 
-PRAW_PICKLE_PATH = os.environ["ALGOTRACKER_PRAW_PICKLE_PATH"].format(env=ENV)
 
 
 ##################
@@ -166,23 +163,9 @@ def construct_rank_vectors(is_subpage):
 
 ## Initialize a PRAW instance
 def init_praw():
-    #praw_key = db_session.query(PrawKey).filter_by(id=PRAW_KEY_ID).first()
-    #access_info = {
-    #    "access_token": praw_key.access_token,
-    #    "refresh_token": praw_key.refresh_token,
-    #    "scope": json.loads(praw_key.scope)
-    #}
-    with open(PRAW_PICKLE_PATH, "rb") as f:
-        access_info = pickle.load(f)
-
-    config = configparser.ConfigParser()
-    config.read("praw.ini")
-    user_agent = config["DEFAULT"]["user_agent"]
-
     handler = MultiprocessHandler()
-    r = praw.Reddit(handler=handler, user_agent=user_agent)
-    r.set_access_credentials(**access_info)
-    return r
+    user_agent = "Covid Algotracker by u/natematias and u/epenn"
+    return praw.Reddit(handler=handler, user_agent=user_agent)
 
 ## Query PRAW for posts
 def get_praw_posts(ids):
