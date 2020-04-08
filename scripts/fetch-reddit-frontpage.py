@@ -164,7 +164,7 @@ def construct_rank_vectors(is_subpage):
 ## Initialize a PRAW instance
 def init_praw():
     handler = MultiprocessHandler()
-    user_agent = "Covid Algotracker by u/natematias and u/epenn"
+    user_agent = "covid algotracker by u/natematias and u/epenn"
     return praw.Reddit(handler=handler, user_agent=user_agent)
 
 ## Query PRAW for posts
